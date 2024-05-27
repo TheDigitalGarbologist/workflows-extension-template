@@ -1,0 +1,23 @@
+{
+    "name": "template",
+    "title": "A template component that adds a column with a fixed value",
+    "group": "template",
+    "description": "Add a fixed value column to a table",
+    "inputs": [
+        {
+            "name": "input_table",
+            "title": "Input table",
+            "description": "The table to add the column to",
+            "type": "table"
+        }
+    ],
+    "outputs": [
+        {
+            "name": "output_table",
+            "title": "Output table",
+            "description": "The table with the column added",
+            "type": "table"
+        }
+    ],
+    "procedureName": "ADD_FIXED_VALUE_COLUMN"
+}

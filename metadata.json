@@ -1,0 +1,13 @@
+{
+    "name": "template",
+    "title": "Template",
+    "group": "template",
+    "description": "A template extension for creating new extensions",
+    "version": "1.0.0",
+    "author": "Author Name",
+    "provider": "bigquery",
+    "license": "MIT",
+    "components": [
+        "adduuid"
+    ]
+}
