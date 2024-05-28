@@ -8,6 +8,6 @@
     "provider": "bigquery",
     "license": "MIT",
     "components": [
-        "adduuid"
+        "template"
     ]
 }

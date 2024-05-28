@@ -1,1 +1,2 @@
 google-cloud-bigquery
+snowflake-connector-python
