@@ -402,13 +402,12 @@ def package():
     print("Packaging extension...")
     current_folder = os.path.dirname(os.path.abspath(__file__))
     metadata = create_metadata()
-    metadata = add_namespace_to_component_names(metadata)
     sql_code = create_sql_code_bq(
         metadata) if metadata["provider"] == "bigquery" else create_sql_code_sf(metadata)
     package_filename = os.path.join(current_folder, 'extension.zip')
     with zipfile.ZipFile(package_filename, "w") as z:
         with z.open("metadata.json", "w") as f:
-            f.write(json.dumps(metadata, indent=2).encode("utf-8"))
+            f.write(json.dumps(add_namespace_to_component_names(metadata), indent=2).encode("utf-8"))
         with z.open("extension.sql", "w") as f:
             f.write(sql_code.encode("utf-8"))
     print(f"Extension correctly packaged to '{package_filename}' file.")
