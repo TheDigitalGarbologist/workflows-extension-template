@@ -244,7 +244,13 @@ def _upload_test_table_sf(filename, component):
     cursor.close()
 
 
-def _get_test_results_sf(metadata, component):
+def _get_test_results(metadata, component):
+    if metadata["provider"] == "bigquery":
+        upload_function = _upload_test_table_bq
+        workflows_temp = bq_workflows_temp
+    else:
+        upload_function = _upload_test_table_sf
+        workflows_temp = sf_workflows_temp
     results = {}
     if component:
         components = [c for c in metadata["components"] if c["name"] == component]
@@ -258,7 +264,7 @@ def _get_test_results_sf(metadata, component):
         # upload test tables
         for filename in os.listdir(test_folder):
             if filename.endswith(".ndjson"):
-                _upload_test_table_sf(os.path.join(test_folder, filename), component)
+                upload_function(os.path.join(test_folder, filename), component)
         # run tests
         test_configuration_file = os.path.join(test_folder, "test.json")
         with open(test_configuration_file, "r") as f:
@@ -270,82 +276,39 @@ def _get_test_results_sf(metadata, component):
             test_id = test_configuration["id"]
             component_results[test_id] = {}
             for inputparam in component["inputs"]:
-                if inputparam["type"] == "table":
-                    tablename = f"'{sf_workflows_temp}._test_{component['name']}_{test_configuration['inputs'][inputparam['name']]}'"
+                if inputparam["type"] == "Table":
+                    tablename = f"'{workflows_temp}._test_{component['name']}_{test_configuration['inputs'][inputparam['name']]}'"
                     param_values.append(tablename)
-                elif inputparam["type"] == "string":
+                elif inputparam["type"] == "String":
                     param_values.append(f"'{test_configuration['inputs'][inputparam['name']]}'")
                 else:
                     param_values.append(test_configuration["inputs"][inputparam["name"]])
             for outputparam in component["outputs"]:
-                tablename = f"{sf_workflows_temp}._table_{uuid4().hex}"
+                tablename = f"{workflows_temp}._table_{uuid4().hex}"
                 param_values.append(f"'{tablename}'")
                 tables[outputparam["name"]] = tablename
             param_values.append(False) # dry run
-            query = f"CALL {sf_workflows_temp}.{component['procedureName']}({','.join([str(p) for p in param_values])});"
+            query = f"CALL {workflows_temp}.{component['procedureName']}({','.join([str(p) for p in param_values])});"
             if verbose:
                 print(query)
-            cur = sf_client.cursor()
-            cur.execute(query)
-            for output in component["outputs"]:
-                query = f"SELECT * FROM {tables[output['name']]}"
-                cur = sf_client.cursor()
-                cur.execute(query)
-                rows = cur.fetchall()
-                component_results[test_id][output["name"]] = rows
-        results[component['name']] = component_results
-    return results
-
-
-def _get_test_results_bq(metadata, component):
-    results = {}
-    if component:
-        components = [c for c in metadata["components"] if c["name"] == component]
-    else:
-        components = metadata["components"]
-    current_folder = os.path.dirname(os.path.abspath(__file__))
-    components_folder = os.path.join(current_folder, 'components')
-    for component in components:
-        component_folder = os.path.join(components_folder, component["name"])
-        test_folder = os.path.join(component_folder, "test")
-        # upload test tables
-        for filename in os.listdir(test_folder):
-            if filename.endswith(".ndjson"):
-                _upload_test_table_bq(os.path.join(test_folder, filename), component)
-        # run tests
-        test_configuration_file = os.path.join(test_folder, "test.json")
-        with open(test_configuration_file, "r") as f:
-            test_configurations = json.load(f)
-        tables = {}
-        param_values = []
-        component_results = {}
-        for test_configuration in test_configurations:
-            test_id = test_configuration["id"]
-            component_results[test_id] = {}
-            for inputparam in component["inputs"]:
-                if inputparam["type"] == "table":
-                    tablename = f"'{bq_workflows_temp}._test_{component['name']}_{test_configuration['inputs'][inputparam['name']]}'"
-                    param_values.append(tablename)
-                elif inputparam["type"] == "string":
-                    param_values.append(f"'{test_configuration['inputs'][inputparam['name']]}'")
-                else:
-                    param_values.append(test_configuration["inputs"][inputparam["name"]])
-            for outputparam in component["outputs"]:
-                tablename = f"{bq_workflows_temp}._table_{uuid4().hex}"
-                param_values.append(f"'{tablename}'")
-                tables[outputparam["name"]] = tablename
-            param_values.append(False) # dry run
-            query = f"CALL {bq_workflows_temp}.{component['procedureName']}({','.join([str(p) for p in param_values])});"
-            if verbose:
-                print(query)
-            query_job = bq_client.query(query)
-            result = query_job.result()
-            for output in component["outputs"]:
-                query = f"SELECT * FROM {tables[output['name']]}"
+            if metadata["provider"] == "bigquery":
                 query_job = bq_client.query(query)
                 result = query_job.result()
-                rows = [{k: v for k,v in row.items()} for row in result]
-                component_results[test_id][output["name"]] = rows
+                for output in component["outputs"]:
+                    query = f"SELECT * FROM {tables[output['name']]}"
+                    query_job = bq_client.query(query)
+                    result = query_job.result()
+                    rows = [{k: v for k,v in row.items()} for row in result]
+                    component_results[test_id][output["name"]] = rows
+            else:
+                cur = sf_client.cursor()
+                cur.execute(query)
+                for output in component["outputs"]:
+                    query = f"SELECT * FROM {tables[output['name']]}"
+                    cur = sf_client.cursor()
+                    cur.execute(query)
+                    rows = cur.fetchall()
+                    component_results[test_id][output["name"]] = rows
         results[component['name']] = component_results
     return results
 
@@ -355,12 +318,8 @@ def test(component):
     metadata = create_metadata()
     current_folder = os.path.dirname(os.path.abspath(__file__))
     components_folder = os.path.join(current_folder, 'components')
-    if metadata["provider"] == "bigquery":
-        deploy_bq(metadata, None)
-        results = _get_test_results_bq(metadata, component)
-    else:
-        deploy_sf(metadata, None)
-        results = _get_test_results_sf(metadata, component)
+    deploy(None)
+    results = _get_test_results(metadata, component)
     for component in metadata["components"]:
         component_folder = os.path.join(components_folder, component["name"])
         for test_id, outputs in results[component["name"]].items():
@@ -381,12 +340,8 @@ def capture(component):
     metadata = create_metadata()
     current_folder = os.path.dirname(os.path.abspath(__file__))
     components_folder = os.path.join(current_folder, 'components')
-    if metadata["provider"] == "bigquery":
-        deploy_bq(metadata, None)
-        results = _get_test_results_bq(metadata, component)
-    else:
-        deploy_sf(metadata, None)
-        results = _get_test_results_sf(metadata, component)
+    deploy(None)
+    results = _get_test_results(metadata, component)
     for component in metadata["components"]:
         component_folder = os.path.join(components_folder, component["name"])
         for test_id, outputs in results[component["name"]].items():
@@ -413,30 +368,22 @@ def package():
     print(f"Extension correctly packaged to '{package_filename}' file.")
 
 def _param_type_to_bq_type(param_type):
-    if param_type == "table":
-        return "STRING"
-    elif param_type == "string":
-        return "STRING"
-    elif param_type == "number":
-        return "FLOAT64"
-    elif param_type == "integer":
-        return "INT64"
-    elif param_type == "boolean":
-        return "BOOL"
+    if param_type in ["Table", "String", "Selection", "Column"]:
+        return ["STRING"]
+    elif param_type == "Number":
+        return ["INT64", "FLOAT64"]
+    elif param_type == "Boolean":
+        return ["BOOL", "BOOLEAN"]
     else:
         raise ValueError(f"Parameter type '{param_type}' not supported")
 
 def _param_type_to_sf_type(param_type):
-    if param_type == "table":
-        return "STRING"
-    elif param_type == "string":
-        return "STRING"
-    elif param_type == "number":
-        return "FLOAT"
-    elif param_type == "integer":
-        return "INT"
-    elif param_type == "boolean":
-        return "BOOL"
+    if param_type in ["Table", "String", "Selection", "Column"]:
+        return ["STRING", "VARCHAR"]
+    elif param_type == "Number":
+        return ["INTEGER", "FLOAT"]
+    elif param_type == "Boolean":
+        return ["BOOL"]
     else:
         raise ValueError(f"Parameter type '{param_type}' not supported")
 
@@ -466,11 +413,12 @@ def check():
             metadata_parameter_types = \
                     [type_function(p["type"]) for p in component["inputs"]] + \
                     [type_function(p["type"])  for p in component["outputs"]] + \
-                    [type_function("boolean")]
+                    [type_function("Boolean")]
             assert parameter_names == metadata_parameter_names, \
                 f"Parameters in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
-            assert parameter_types == metadata_parameter_types, \
-                f"Parameter types in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
+            for i in range(len(parameter_types) - 1):
+                assert parameter_types[i] in metadata_parameter_types[i], \
+                    f"Parameter types in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
     print("Extension correctly checked. No errors found.")
 
 

@@ -1,5 +1,5 @@
-/*
-This is a template for creating a BigQuery procedure.
+
+-- This is a template for creating a BigQuery procedure.
 -------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE @@workflows_temp@@.ADD_FIXED_VALUE_COLUMN(input_table STRING, output_table STRING, dry_run BOOL)
@@ -20,7 +20,7 @@ BEGIN
         FROM ''' || input_table ;
     END IF;
 END;
-*/
+
 
 /*
 -- This is a template for creating a SnowFlake procedure.
