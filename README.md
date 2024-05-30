@@ -11,8 +11,8 @@ Follow these steps to implement your own extension.
 
 1. Edit the `metadata.json` file in the root folder of the repo so it contains the correct information for the extension.
 1. Copy the `template` folder and rename it with the desired internal name (i.e. mycomponent) of the component to add.
-1. Edit the `procedure.sql` file in that copied folder to define the logic of the new component.
-1. Edit the component metadata file. Notice that the names of inputs and outputs declared in the metadata file must match the parameters of the function that you implemented in the `procedure.sql` file, and the value in the `procedureName` property must exactly match the name of the function. The name in the `name` property of the component metadata must match the name of the containing folder.
+1. Edit the `procedure.sql` file in that copied folder to define the logic of the new component. For more details, see [here](./docs/procedure.md)
+1. Edit the component metadata file. For more information, see [here](./doc/component_metadata.md)
 1. Setup the elements in the `test` folder to define how the test should be run to verify that the component is correctly working. Use the `test.json` file to define the test case, and add the tables that you need for your test as `.ndjson` files in that same folder. You can refer to those files as input values using the filename without the extension (see the provided example with the `table1.ndjson` file)
 1. Write the component documentation in the `README` file.
 1. Repeat steps 3-7 as many times as components will be included in the extension.

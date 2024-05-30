@@ -8,7 +8,7 @@
             "name": "input_table",
             "title": "Input table",
             "description": "The table to add the column to",
-            "type": "table"
+            "type": "Table"
         }
     ],
     "outputs": [
@@ -16,7 +16,7 @@
             "name": "output_table",
             "title": "Output table",
             "description": "The table with the column added",
-            "type": "table"
+            "type": "Table"
         }
     ],
     "procedureName": "ADD_FIXED_VALUE_COLUMN"
