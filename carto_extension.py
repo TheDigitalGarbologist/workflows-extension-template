@@ -270,9 +270,9 @@ def _get_test_results(metadata, component):
         with open(test_configuration_file, "r") as f:
             test_configurations = json.load(f)
         tables = {}
-        param_values = []
         component_results = {}
         for test_configuration in test_configurations:
+            param_values = []
             test_id = test_configuration["id"]
             component_results[test_id] = {}
             for inputparam in component["inputs"]:
