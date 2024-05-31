@@ -1,4 +1,3 @@
-
 -- This is a template for creating a BigQuery procedure.
 -------------------------------------------------------
 
@@ -20,6 +19,7 @@ BEGIN
         FROM ''' || input_table ;
     END IF;
 END;
+
 
 
 /*

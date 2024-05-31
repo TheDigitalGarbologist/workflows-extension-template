@@ -109,12 +109,10 @@ def create_sql_code_sf(metadata):
             procedures_code += "\n" + procedure_code
     procedures = []
     for c in metadata["components"]:
-        param_types = []
-        for i in c["inputs"]:
-            param_types.append(_param_type_to_sf_type(i['type']))
-        for o in c["outputs"]:
-            param_types.append(_param_type_to_sf_type(o['type']))
-        param_types.append("BOOLEAN")
+        lines = procedure_code.splitlines()
+        create_line = [l for l in lines if l.startswith("CREATE OR REPLACE PROCEDURE")][0]
+        parameters = create_line.split("(")[1].split(")")[0].split(",")
+        param_types = [p.split()[1].upper() for p in parameters]
         procedures.append(f"{c['procedureName']}({','.join(param_types)})")
     code = f'''
 DECLARE
