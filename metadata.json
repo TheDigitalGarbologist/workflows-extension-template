@@ -6,7 +6,20 @@
     "version": "1.0.0",
     "author": "Author Name",
     "provider": "bigquery",
-    "license": "MIT",
+    "details": [
+        {
+            "name": "Author",
+            "value": "Author Name",
+            "link": {
+                "label": "Author website",
+                "href": "www.page.com"
+            }
+        },
+        {
+            "name": "License",
+            "value": "Apache 2.0"
+        }
+    ],
     "components": [
         "template"
     ]
