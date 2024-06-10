@@ -364,6 +364,9 @@ def package():
             f.write(json.dumps(add_namespace_to_component_names(metadata), indent=2).encode("utf-8"))
         with z.open("extension.sql", "w") as f:
             f.write(sql_code.encode("utf-8"))
+        for icon_file in os.listdir(os.path.join(current_folder, "icons")):
+            z.write(os.path.join(current_folder, "icons", icon_file), arcname=os.path.join('icons', icon_file))
+
     print(f"Extension correctly packaged to '{package_filename}' file.")
 
 def _param_type_to_bq_type(param_type):

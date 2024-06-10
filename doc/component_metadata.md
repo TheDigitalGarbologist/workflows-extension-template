@@ -6,6 +6,10 @@ Here you can find additional information about the different properties that mus
 
 The name of the component. It must match the name of the containing folder.
 
+## `icon`
+
+The name of the icon file to use for the component. The icon must be in the `icons` folder in the root of the repository.
+
 ## `inputs`
 
 It should contain an array of input objects. Each object must have the following properties:
@@ -49,6 +53,7 @@ These are the available types to be used. Notice that some of them have addition
     }
     ```
 -   `Number` (it accepts `min`, `max` and `default` properties)
+
     ```sql
     {
     "title": "Distance"
@@ -58,6 +63,9 @@ These are the available types to be used. Notice that some of them have addition
     ```
 
     ```
+
+    ```
+
 -   `Selection`
     ```sql
     {

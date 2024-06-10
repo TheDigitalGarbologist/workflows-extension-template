@@ -3,6 +3,7 @@
     "title": "Template",
     "group": "template",
     "description": "A template extension for creating new extensions",
+    "icon": "extension-default.svg",
     "version": "1.0.0",
     "author": "Author Name",
     "provider": "bigquery",
