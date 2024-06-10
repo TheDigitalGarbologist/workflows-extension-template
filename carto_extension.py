@@ -39,6 +39,7 @@ def create_metadata():
             components_folder, component, "doc", "README.md")
         with open(help_file, "r") as f:
             help_text = f.read()
+            help_text = help_text.replace("\n", "\\n")
             component_metadata["help"] = help_text
 
     metadata['components'] = components
