@@ -3,7 +3,7 @@
     "title": "A template component that adds a column with a fixed value",
     "group": "template",
     "description": "Add a fixed value column to a table",
-    "icon": "component-default.svg",
+    "icon": "component-default.png",
     "inputs": [
         {
             "name": "input_table",

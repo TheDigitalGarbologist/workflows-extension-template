@@ -7,6 +7,7 @@ import os
 import zipfile
 import json
 from uuid import uuid4
+import base64
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
@@ -22,6 +23,17 @@ def add_namespace_to_component_names(metadata):
         component["name"] = f'{metadata["name"]}.{component["name"]}'
     return metadata
 
+
+def _encode_image(image_path):
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Icon file '{os.path.basename(image_path)}' not found in icons folder")
+    with open(image_path, "rb") as f:
+        if image_path.endswith(".svg"):
+            return f"data:image/svg+xml;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+        else:
+            return f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+
+
 def create_metadata():
     current_folder = os.path.dirname(os.path.abspath(__file__))
     metadata_file = os.path.join(current_folder, "metadata.json")
@@ -29,6 +41,11 @@ def create_metadata():
         metadata = json.load(f)
     components = []
     components_folder = os.path.join(current_folder, 'components')
+    icon_folder = os.path.join(current_folder, 'icons')
+    icon_filename = metadata.get("icon")
+    if icon_filename:
+        icon_full_path = os.path.join(icon_folder, icon_filename)
+        metadata["icon"] = _encode_image(icon_full_path)
     for component in os.listdir(components_folder):
         metadata_file = os.path.join(
             components_folder, component, "metadata.json")
@@ -41,6 +58,10 @@ def create_metadata():
             help_text = f.read()
             help_text = help_text.replace("\n", "\\n")
             component_metadata["help"] = help_text
+        icon_filename = component_metadata.get("icon")
+        if icon_filename:
+            icon_full_path = os.path.join(icon_folder, icon_filename)
+            component_metadata["icon"] = _encode_image(icon_full_path)
 
     metadata['components'] = components
     return metadata
@@ -364,8 +385,6 @@ def package():
             f.write(json.dumps(add_namespace_to_component_names(metadata), indent=2).encode("utf-8"))
         with z.open("extension.sql", "w") as f:
             f.write(sql_code.encode("utf-8"))
-        for icon_file in os.listdir(os.path.join(current_folder, "icons")):
-            z.write(os.path.join(current_folder, "icons", icon_file), arcname=os.path.join('icons', icon_file))
 
     print(f"Extension correctly packaged to '{package_filename}' file.")
 
