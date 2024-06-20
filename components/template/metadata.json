@@ -1,6 +1,6 @@
 {
     "name": "template",
-    "title": "A template component that adds a column with a fixed value",
+    "title": "Fixed value column",
     "group": "template",
     "description": "Add a fixed value column to a table",
     "icon": "component-default.png",
