@@ -51,3 +51,7 @@ For running the "deploy", "test" and "capture" scripts, you need to configure th
 If you are creating a BigQuery extension, Install the Google Cloud SDK and run the following in your console to authenticate:
 
 `$ gcloud auth application-default login`
+
+## CI configuration
+
+The template includes a GitHub workflow to run the extension test suite when new changes are pushed to the repository (provided that the `capture` script has been run and test fixtures have been captured). GitHub secrets must be configured in order to have the workflow correctly running. Check the `CI_test.yml` file for more information.
