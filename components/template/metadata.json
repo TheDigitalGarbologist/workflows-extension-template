@@ -2,7 +2,7 @@
     "name": "template",
     "title": "Fixed value column",
     "group": "template",
-    "description": "Add a fixed value column to a table",
+    "description": "This component adds a fixed value column to a table",
     "icon": "component-default.png",
     "inputs": [
         {
