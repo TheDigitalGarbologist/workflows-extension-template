@@ -5,7 +5,7 @@ Use this repository template to create a new extension for CARTO Workflows.
 Follow these steps to implement your own extension.
 
 1. Create a new repository based on this one.
-1. Install the requirements needed by the repository scripts:
+1. Install the requirements needed by the repository scripts. Python 3 is required to run the repository scripts:
 
     `$ pip install -r ./requirements.txt`
 
