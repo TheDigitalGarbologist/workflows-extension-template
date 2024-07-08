@@ -1,9 +1,9 @@
 {
     "name": "template",
     "title": "Fixed value column",
-    "group": "template",
+    "group": "Template",
     "description": "This component adds a fixed value column to a table",
-    "icon": "component-default.png",
+    "icon": "component-default.svg",
     "inputs": [
         {
             "name": "input_table",
