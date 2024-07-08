@@ -8,7 +8,7 @@ The name of the component. It must match the name of the containing folder.
 
 ## `icon`
 
-The name of the icon file to use for the component. The icon must be in the `icons` folder in the root of the repository. Both PNG and SVG files are supported.
+The name of the icon file to use for the component. The icon must be in the `icons` folder in the root of the repository. Only SVG files are supported. See [here](./icons.md) for more detail about the icon formats.
 
 ## `inputs`
 
