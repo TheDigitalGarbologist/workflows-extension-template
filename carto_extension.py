@@ -458,7 +458,7 @@ if args.destination and action not in ['deploy']:
     parser.error("Destination can only be used with 'deploy' action")
 
 if action in ['deploy', 'test', 'capture']:
-    bq_client = bigquery.Client()
+    bq_client = bigquery.Client(project=os.getenv('BQ_TEST_PROJECT'))
     sf_client = snowflake.connector.connect(
         user=os.getenv('SF_USER'),
         password=os.getenv('SF_PASSWORD'),
