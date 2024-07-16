@@ -48,7 +48,7 @@ You can deploy the extension in a given destination (project.dataset in the case
 
 For running the "deploy", "test" and "capture" scripts, you need to configure the access to the data warehouse where your extension is supposed to run. To do so, rename the `.env.template` file in the root of the repository to `.env` and edit it with the appropriate values.
 
-If you are creating a BigQuery extension, Install the Google Cloud SDK and run the following in your console to authenticate:
+If you are creating a BigQuery extension, install the Google Cloud SDK and run the following in your console to authenticate:
 
 `$ gcloud auth application-default login`
 

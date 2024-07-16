@@ -18,6 +18,31 @@ load_dotenv()
 bq_workflows_temp = f"`{os.getenv('BQ_TEST_PROJECT')}.{os.getenv('BQ_TEST_DATASET')}`"
 sf_workflows_temp = f"{os.getenv('SF_TEST_DATABASE')}.{os.getenv('SF_TEST_SCHEMA')}"
 
+sf_client_instance = None
+bq_client_instance = None
+
+def bq_client():
+    global bq_client_instance
+    if bq_client_instance is None:
+        try:
+            bq_client_instance = bigquery.Client(project=os.getenv('BQ_TEST_PROJECT'))
+        except Exception as e:
+            raise Exception(f"Error connecting to BigQuery: {e}")
+    return bq_client_instance
+
+def sf_client():
+    global sf_client_instance
+    if sf_client_instance is None:
+        try:
+            sf_client_instance = snowflake.connector.connect(
+                user=os.getenv('SF_USER'),
+                password=os.getenv('SF_PASSWORD'),
+                account=os.getenv('SF_ACCOUNT')
+            )
+        except Exception as e:
+            raise Exception(f"Error connecting to SnowFlake: {e}")
+    return sf_client_instance
+
 def add_namespace_to_component_names(metadata):
     for component in metadata["components"]:
         component["name"] = f'{metadata["name"]}.{component["name"]}'
@@ -188,7 +213,7 @@ def deploy_bq(metadata, destination):
     )
     if verbose:
         print(sql_code)
-    query_job = bq_client.query(sql_code)
+    query_job = bq_client().query(sql_code)
     query_job.result()
     print("Extension correctly deployed to BigQuery.")
 
@@ -203,7 +228,7 @@ def deploy_sf(metadata, destination):
     )
     if verbose:
         print(sql_code)
-    cur = sf_client.cursor()
+    cur = sf_client().cursor()
     cur.execute(sql_code)
     print("Extension correctly deployed to SnowFlake.")
 
@@ -220,7 +245,7 @@ def _upload_test_table_bq(filename, component):
     dataset_id = os.getenv('BQ_TEST_DATASET')
     table_id = f"_test_{component['name']}_{os.path.basename(filename).split('.')[0]}"
 
-    dataset_ref = bq_client.dataset(dataset_id)
+    dataset_ref = bq_client().dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
@@ -228,7 +253,7 @@ def _upload_test_table_bq(filename, component):
     job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
 
     with open(filename, "rb") as source_file:
-        job = bq_client.load_table_from_file(
+        job = bq_client().load_table_from_file(
             source_file,
             table_ref,
             job_config=job_config,
@@ -256,7 +281,7 @@ def _upload_test_table_sf(filename, component):
         create_table_sql += f'{key} {data_type}, '
     create_table_sql = create_table_sql.rstrip(', ')
     create_table_sql += ');\n'
-    cursor = sf_client.cursor()
+    cursor = sf_client().cursor()
     cursor.execute(create_table_sql)
     for row in data:
         insert_sql = f"INSERT INTO {sf_workflows_temp}.{table_id} ({', '.join(row.keys())}) VALUES ({', '.join(['%s'] * len(row))})"
@@ -312,20 +337,20 @@ def _get_test_results(metadata, component):
             if verbose:
                 print(query)
             if metadata["provider"] == "bigquery":
-                query_job = bq_client.query(query)
+                query_job = bq_client().query(query)
                 result = query_job.result()
                 for output in component["outputs"]:
                     query = f"SELECT * FROM {tables[output['name']]}"
-                    query_job = bq_client.query(query)
+                    query_job = bq_client().query(query)
                     result = query_job.result()
                     rows = [{k: v for k,v in row.items()} for row in result]
                     component_results[test_id][output["name"]] = rows
             else:
-                cur = sf_client.cursor()
+                cur = sf_client().cursor()
                 cur.execute(query)
                 for output in component["outputs"]:
                     query = f"SELECT * FROM {tables[output['name']]}"
-                    cur = sf_client.cursor()
+                    cur = sf_client().cursor()
                     cur.execute(query)
                     rows = cur.fetchall()
                     component_results[test_id][output["name"]] = rows
@@ -442,7 +467,6 @@ def check():
                     f"Parameter types in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
     print("Extension correctly checked. No errors found.")
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('action', nargs=1, type=str, choices=[
                     'package', 'deploy', 'test', 'capture', 'check'])
@@ -456,15 +480,6 @@ if args.component and action not in ['capture', 'test']:
     parser.error("Component can only be used with 'capture' and 'test' actions")
 if args.destination and action not in ['deploy']:
     parser.error("Destination can only be used with 'deploy' action")
-
-if action in ['deploy', 'test', 'capture']:
-    bq_client = bigquery.Client(project=os.getenv('BQ_TEST_PROJECT'))
-    sf_client = snowflake.connector.connect(
-        user=os.getenv('SF_USER'),
-        password=os.getenv('SF_PASSWORD'),
-        account=os.getenv('SF_ACCOUNT')
-        )
-
 if action == 'package':
     package()
 elif action == 'deploy':
