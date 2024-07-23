@@ -71,7 +71,7 @@ def create_metadata():
     if icon_filename:
         icon_full_path = os.path.join(icon_folder, icon_filename)
         metadata["icon"] = _encode_image(icon_full_path)
-    for component in os.listdir(components_folder):
+    for component in metadata["components"]:
         metadata_file = os.path.join(
             components_folder, component, "metadata.json")
         with open(metadata_file, "r") as f:
