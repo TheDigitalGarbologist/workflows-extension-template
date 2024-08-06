@@ -8,6 +8,7 @@ import zipfile
 import json
 from uuid import uuid4
 import base64
+import re
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
@@ -59,37 +60,44 @@ def _encode_image(image_path):
             return f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
 
 
-def create_metadata():
+def create_metadatas():
     current_folder = os.path.dirname(os.path.abspath(__file__))
-    metadata_file = os.path.join(current_folder, "metadata.json")
+    metadata_file = os.path.join(current_folder, "metadatas.json")
     with open(metadata_file, "r") as f:
-        metadata = json.load(f)
-    components = []
-    components_folder = os.path.join(current_folder, 'components')
-    icon_folder = os.path.join(current_folder, 'icons')
-    icon_filename = metadata.get("icon")
-    if icon_filename:
-        icon_full_path = os.path.join(icon_folder, icon_filename)
-        metadata["icon"] = _encode_image(icon_full_path)
-    for component in metadata["components"]:
-        metadata_file = os.path.join(
-            components_folder, component, "metadata.json")
-        with open(metadata_file, "r") as f:
-            component_metadata = json.load(f)
-            components.append(component_metadata)
-        help_file = os.path.join(
-            components_folder, component, "doc", "README.md")
-        with open(help_file, "r") as f:
-            help_text = f.read()
-            help_text = help_text.replace("\n", "\\n")
-            component_metadata["help"] = help_text
-        icon_filename = component_metadata.get("icon")
+        metadatas = json.load(f)
+    if provider:
+        data = metadatas
+        metadatas = [item for item in data if item["provider"] == provider]
+
+    for metadata in metadatas:
+        components = []
+        components_folder = os.path.join(current_folder, 'components')
+        icon_folder = os.path.join(current_folder, 'icons')
+        icon_filename = metadata.get("icon")
         if icon_filename:
             icon_full_path = os.path.join(icon_folder, icon_filename)
-            component_metadata["icon"] = _encode_image(icon_full_path)
+            metadata["icon"] = _encode_image(icon_full_path)
+        for component in metadata["components"]:
+            metadata_file = os.path.join(
+                components_folder, component, "metadata.json")
+            with open(metadata_file, "r") as f:
+                component_metadata = json.load(f)
+                components.append(component_metadata)
+            help_file = os.path.join(
+                components_folder, component, "doc", "README.md")
+            with open(help_file, "r") as f:
+                help_text = f.read()
+                help_text = help_text.replace("\n", "\\n")
+                component_metadata["help"] = help_text
+            icon_filename = component_metadata.get("icon")
+            if icon_filename:
+                icon_full_path = os.path.join(icon_folder, icon_filename)
+                component_metadata["icon"] = _encode_image(icon_full_path)
 
-    metadata['components'] = components
-    return metadata
+        metadata['components'] = components
+    if len(metadatas) == 0:
+        raise ValueError(f"No metadata found for provider '{provider}', please check the 'provider' argument and the metadata file")
+    return metadatas
 
 
 def create_sql_code_bq(metadata):
@@ -156,9 +164,15 @@ def create_sql_code_sf(metadata):
             procedures_code += "\n" + procedure_code
     procedures = []
     for c in metadata["components"]:
-        lines = procedure_code.splitlines()
-        create_line = [l for l in lines if l.startswith("CREATE OR REPLACE PROCEDURE")][0]
-        parameters = create_line.split("(")[1].split(")")[0].split(",")
+        # Extract parameters using regex
+        pattern = r'CREATE OR REPLACE PROCEDURE.*?\(([^()]*?)\)'
+        match = re.search(pattern, procedure_code, re.DOTALL)
+        # Get first group of the match and split by comma
+        parameters = match.group(1).split(',')
+        if len(parameters) == 1 and parameters[0].strip() == '':
+            parameters = []
+        # Remove starting and trailing spaces
+        parameters = [param.strip() for param in parameters]
         param_types = [p.split()[1].upper() for p in parameters]
         procedures.append(f"{c['procedureName']}({','.join(param_types)})")
     code = f'''
@@ -234,11 +248,12 @@ def deploy_sf(metadata, destination):
 
 
 def deploy(destination):
-    metadata = create_metadata()
-    if metadata["provider"] == "bigquery":
-        deploy_bq(metadata, destination)
-    else:
-        deploy_sf(metadata, destination)
+    metadatas = create_metadatas()
+    for metadata in metadatas:
+        if metadata["provider"] == "bigquery":
+            deploy_bq(metadata, destination)
+        else:
+            deploy_sf(metadata, destination)
 
 
 def _upload_test_table_bq(filename, component):
@@ -326,6 +341,8 @@ def _get_test_results(metadata, component):
                     param_values.append(tablename)
                 elif inputparam["type"] == "String":
                     param_values.append(f"'{test_configuration['inputs'][inputparam['name']]}'")
+                elif inputparam["type"] == "Selection":
+                    param_values.append(f"'{test_configuration['inputs'][inputparam['name']]}'")
                 else:
                     param_values.append(test_configuration["inputs"][inputparam["name"]])
             for outputparam in component["outputs"]:
@@ -358,58 +375,63 @@ def _get_test_results(metadata, component):
     return results
 
 
-def test(component):
+def test(_component):
     print("Testing extension...")
-    metadata = create_metadata()
+    metadatas = create_metadatas()
     current_folder = os.path.dirname(os.path.abspath(__file__))
     components_folder = os.path.join(current_folder, 'components')
     deploy(None)
-    results = _get_test_results(metadata, component)
-    for component in metadata["components"]:
-        component_folder = os.path.join(components_folder, component["name"])
-        for test_id, outputs in results[component["name"]].items():
-            test_folder = os.path.join(component_folder, "test", "fixtures")
-            test_filename = os.path.join(test_folder, f"{test_id}.json")
-            with open(test_filename, "r") as f:
-                expected = json.load(f)
-                for output_name, output in outputs.items():
-                    output = json.loads(json.dumps(output))
-                    assert \
-                        sorted(expected[output_name], key=json.dumps) == sorted(output, key=json.dumps), \
-                        f"Test '{test_id}' failed for component {component['name']} and table {output_name}."
+    for metadata in metadatas:
+        results = _get_test_results(metadata, _component)
+        for component in metadata["components"]:
+            component_folder = os.path.join(components_folder, component["name"])
+            for test_id, outputs in results[component["name"]].items():
+                test_folder = os.path.join(component_folder, "test", "fixtures")
+                test_filename = os.path.join(test_folder, f"{test_id}.json")
+                with open(test_filename, "r") as f:
+                    expected = json.load(f)
+                    for output_name, output in outputs.items():
+                        output = json.loads(json.dumps(output))
+                        assert \
+                            sorted(expected[output_name], key=json.dumps) == sorted(output, key=json.dumps), \
+                            f"Test '{test_id}' failed for component {component['name']} and table {output_name}."
+
     print("Extension correctly tested.")
 
 
-def capture(component):
+def capture(_component):
     print("Capturing fixtures... ")
-    metadata = create_metadata()
-    current_folder = os.path.dirname(os.path.abspath(__file__))
-    components_folder = os.path.join(current_folder, 'components')
+    metadatas = create_metadatas()
     deploy(None)
-    results = _get_test_results(metadata, component)
-    for component in metadata["components"]:
-        component_folder = os.path.join(components_folder, component["name"])
-        for test_id, outputs in results[component["name"]].items():
-            test_folder = os.path.join(component_folder, "test", "fixtures")
-            os.makedirs(test_folder, exist_ok=True)
-            test_filename = os.path.join(test_folder, f"{test_id}.json")
-            with open(test_filename, "w") as f:
-                f.write(json.dumps(outputs, indent=2))
+    for metadata in metadatas:
+        current_folder = os.path.dirname(os.path.abspath(__file__))
+        components_folder = os.path.join(current_folder, 'components')
+        results = _get_test_results(metadata, _component)
+        for component in metadata["components"]:
+            component_folder = os.path.join(components_folder, component["name"])
+            for test_id, outputs in results[component["name"]].items():
+                test_folder = os.path.join(component_folder, "test", "fixtures")
+                os.makedirs(test_folder, exist_ok=True)
+                test_filename = os.path.join(test_folder, f"{test_id}.json")
+                with open(test_filename, "w") as f:
+                    f.write(json.dumps(outputs, indent=2))
+
     print("Fixtures correctly captured.")
 
 
 def package():
     print("Packaging extension...")
     current_folder = os.path.dirname(os.path.abspath(__file__))
-    metadata = create_metadata()
-    sql_code = create_sql_code_bq(
-        metadata) if metadata["provider"] == "bigquery" else create_sql_code_sf(metadata)
-    package_filename = os.path.join(current_folder, 'extension.zip')
-    with zipfile.ZipFile(package_filename, "w") as z:
-        with z.open("metadata.json", "w") as f:
-            f.write(json.dumps(add_namespace_to_component_names(metadata), indent=2).encode("utf-8"))
-        with z.open("extension.sql", "w") as f:
-            f.write(sql_code.encode("utf-8"))
+    metadatas = create_metadatas()
+    for metadata in metadatas:
+        sql_code = create_sql_code_bq(
+            metadata) if metadata["provider"] == "bigquery" else create_sql_code_sf(metadata)
+        package_filename = os.path.join(current_folder, f'extension_{metadata["provider"]}.zip')
+        with zipfile.ZipFile(package_filename, "w") as z:
+            with z.open("metadata.json", "w") as f:
+                f.write(json.dumps(add_namespace_to_component_names(metadata), indent=2).encode("utf-8"))
+            with z.open("extension.sql", "w") as f:
+                f.write(sql_code.encode("utf-8"))
 
     print(f"Extension correctly packaged to '{package_filename}' file.")
 
@@ -436,50 +458,61 @@ def _param_type_to_sf_type(param_type):
 def check():
     print("Checking extension...")
     current_folder = os.path.dirname(os.path.abspath(__file__))
-    metadata = create_metadata()
-    components_folder = os.path.join(current_folder, 'components')
-    for component in metadata["components"]:
-        component_folder = os.path.join(components_folder, component["name"])
-        procedure_file = os.path.join(
-            component_folder, "src", "procedure.sql")
-        with open(procedure_file, "r") as f:
-            procedure_code = f.read()
-            assert f"CREATE OR REPLACE PROCEDURE {WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}" in procedure_code, \
-                f"Procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' not found in component '{component['name']}'"
-            lines = procedure_code.splitlines()
-            create_line = [l for l in lines if l.startswith("CREATE OR REPLACE PROCEDURE")][0]
-            parameters = create_line.split("(")[1].split(")")[0].split(",")
-            parameter_names = [p.split()[0] for p in parameters]
-            parameter_types = [p.split()[1].upper() for p in parameters]
-            type_function = _param_type_to_bq_type if metadata["provider"] == "bigquery" else _param_type_to_sf_type
-            metadata_parameter_names = \
-                    [p["name"] for p in component["inputs"]] + \
-                    [p["name"] for p in component["outputs"]] + \
-                    ["dry_run"]
-            metadata_parameter_types = \
-                    [type_function(p["type"]) for p in component["inputs"]] + \
-                    [type_function(p["type"])  for p in component["outputs"]] + \
-                    [type_function("Boolean")]
-            assert parameter_names == metadata_parameter_names, \
-                f"Parameters in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
-            for i in range(len(parameter_types) - 1):
-                assert parameter_types[i] in metadata_parameter_types[i], \
-                    f"Parameter types in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
+    metadatas = create_metadatas()
+    for metadata in metadatas:
+        components_folder = os.path.join(current_folder, 'components')
+        for component in metadata["components"]:
+            component_folder = os.path.join(components_folder, component["name"])
+            procedure_file = os.path.join(
+                component_folder, "src", "procedure.sql")
+            with open(procedure_file, "r") as f:
+                procedure_code = f.read()
+                assert f"CREATE OR REPLACE PROCEDURE {WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}" in procedure_code, \
+                    f"Procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' not found in component '{component['name']}'"
+                # Extract parameters using regex
+                pattern = r'CREATE OR REPLACE PROCEDURE.*?\(([^()]*?)\)'
+                match = re.search(pattern, procedure_code, re.DOTALL)
+                # Get first group of the match and split by comma
+                parameters = match.group(1).split(',')
+                if len(parameters) == 1 and parameters[0].strip() == '':
+                    parameters = []
+                # Remove starting and trailing spaces
+                parameters = [param.strip().lower() for param in parameters]
+                parameter_names = [p.split()[0] for p in parameters]
+                parameter_types = [p.split()[1].upper() for p in parameters]
+                type_function = _param_type_to_bq_type if metadata["provider"] == "bigquery" else _param_type_to_sf_type
+                metadata_parameter_names = \
+                        [p["name"] for p in component["inputs"]] + \
+                        [p["name"] for p in component["outputs"]] + \
+                        ["dry_run"]
+                metadata_parameter_types = \
+                        [type_function(p["type"]) for p in component["inputs"]] + \
+                        [type_function(p["type"])  for p in component["outputs"]] + \
+                        [type_function("Boolean")]
+                assert parameter_names == metadata_parameter_names, \
+                    f"Parameters in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
+                for i in range(len(parameter_types) - 1):
+                    assert parameter_types[i] in metadata_parameter_types[i], \
+                        f"Parameter types in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
     print("Extension correctly checked. No errors found.")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('action', nargs=1, type=str, choices=[
                     'package', 'deploy', 'test', 'capture', 'check'])
-parser.add_argument('--component', type=str)
-parser.add_argument('--destination', type=str, required="deploy" in argv)
-parser.add_argument('-v', help='Verbose mode', action='store_true')
+parser.add_argument('-c','--component', help='Choose one component', type=str)
+parser.add_argument('-d','--destination', help='Choose an specific destination', type=str, required="deploy" in argv)
+parser.add_argument('-v','--verbose', help='Verbose mode', action='store_true')
+parser.add_argument('-p','--provider', help='Choose one provider', type=str, choices=['bigquery', 'snowflake'])
 args = parser.parse_args()
 action = args.action[0]
-verbose = args.v
+verbose = args.verbose
+provider = args.provider
 if args.component and action not in ['capture', 'test']:
     parser.error("Component can only be used with 'capture' and 'test' actions")
 if args.destination and action not in ['deploy']:
     parser.error("Destination can only be used with 'deploy' action")
+if args.destination and not args.provider:
+    parser.error("Destination can only be used with 'deploy' action and provider argument is required")
 if action == 'package':
     package()
 elif action == 'deploy':

@@ -1,0 +1,57 @@
+
+[
+    {
+        "name": "template",
+        "title": "Template",
+        "group": "template",
+        "description": "A template extension for creating new extensions",
+        "icon": "extension-default.svg",
+        "version": "1.0.0",
+        "author": "Author Name",
+        "provider": "bigquery",
+        "details": [
+            {
+                "name": "Author",
+                "value": "Author Name",
+                "link": {
+                    "label": "Author website",
+                    "href": "www.page.com"
+                }
+            },
+            {
+                "name": "License",
+                "value": "Apache 2.0"
+            }
+        ],
+        "components": [
+            "template"
+        ]
+    },
+    {
+        "name": "template_sf",
+        "title": "Template Snowflake",
+        "group": "template",
+        "description": "A template extension for creating new extensions in Snowflake",
+        "icon": "extension-default.svg",
+        "version": "1.0.0",
+        "author": "Author Name",
+        "provider": "snowflake",
+        "details": [
+            {
+                "name": "Author",
+                "value": "Author Name",
+                "link": {
+                    "label": "Author website",
+                    "href": "www.page.com"
+                }
+            },
+            {
+                "name": "License",
+                "value": "Apache 2.0"
+            }
+        ],
+        "components": [
+            "template_sf"
+        ]
+    }
+]
