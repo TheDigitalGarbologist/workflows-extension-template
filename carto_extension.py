@@ -480,7 +480,7 @@ def check():
             for i in range(len(parameter_types) - 1):
                 assert parameter_types[i] in metadata_parameter_types[i], \
                     f"Parameter types in procedure '{WORKFLOWS_TEMP_PLACEHOLDER}.{component['procedureName']}' do not match with metadata in component '{component['name']}'"
-print("Extension correctly checked. No errors found.")
+    print("Extension correctly checked. No errors found.")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('action', nargs=1, type=str, choices=[
