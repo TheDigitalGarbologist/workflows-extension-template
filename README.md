@@ -15,7 +15,6 @@ If you are creating a BigQuery extension, install the Google Cloud SDK and run t
 ## Implementing the extension
 
 Follow these steps to implement your own extension, test and capture are optional steps but highly recommended.
-All the commands allows you to use `--provider` parameter to specify the provider to use from the metadata file.
 
 1. Create a new repository based on this one.
 2. Install the requirements needed by the repository scripts. Python 3 is required to run the repository scripts:
@@ -41,7 +40,7 @@ All the commands allows you to use `--provider` parameter to specify the provide
 
     `$ python carto_extension.py test`
 
-13. Run the `package` script to create the `extension_{provider}.zip` file. It will create a zip file with the extension code and metadata for each provider defined in the metadata file.
+13. Run the `package` script to create the `extension.zip` file. It will create a zip file with the extension code and metadata.
 
     `$ python carto_extension.py package`
 
@@ -63,19 +62,14 @@ The template includes a GitHub workflow to run the extension test suite when new
 
 ## Commands and parameters
 * `check`: Checks the extension code definition and metadata.
-  * `--provider`: The data warehouse provider to use from the metadata.
 * `capture`: Captures the output of the components to use as test fixtures.
   * `--component`: The component to capture.
   * `--verbose`: Show more information about the capture process.
-  * `--provider`: The data warehouse provider to use from the metadata.
 * `test`: Runs the tests for the components.
   * `--component`: The component to test.
   * `--verbose`: Show more information about the test process.
-  * `--provider`: The data warehouse provider to use from the metadata.
 * `deploy`: Deploys the extension to the data warehouse.
   * `--destination`: The destination where the extension will be deployed in the data warehouse.
   * `--verbose`: Show more information about the deployment process.
-  * `--provider`: The data warehouse provider to use from the metadata.
 * `package`: Packages the extension into a zip file.
   * `--verbose`: Show more information about the packaging process.
-  * `--provider`: The data warehouse provider to use from the metadata.
