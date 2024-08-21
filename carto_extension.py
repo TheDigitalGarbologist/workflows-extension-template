@@ -321,19 +321,25 @@ def _get_test_results(metadata, component):
             test_id = test_configuration["id"]
             component_results[test_id] = {}
             for inputparam in component["inputs"]:
-                if inputparam["type"] == "Table":
-                    tablename = f"'{workflows_temp}._test_{component['name']}_{test_configuration['inputs'][inputparam['name']]}'"
-                    param_values.append(tablename)
-                elif inputparam["type"] == "String":
-                    param_values.append(f"'{test_configuration['inputs'][inputparam['name']]}'")
+                param_value = test_configuration['inputs'][inputparam['name']]
+                if param_value is None:
+                    param_values.append(None)
                 else:
-                    param_values.append(test_configuration["inputs"][inputparam["name"]])
+                    if inputparam["type"] == "Table":
+                        tablename = f"'{workflows_temp}._test_{component['name']}_{param_value}'"
+                        param_values.append(tablename)
+                    elif inputparam["type"] == "String":
+                        param_values.append(f"'{param_value}'")
+                    else:
+                        param_values.append(param_value)
             for outputparam in component["outputs"]:
                 tablename = f"{workflows_temp}._table_{uuid4().hex}"
                 param_values.append(f"'{tablename}'")
                 tables[outputparam["name"]] = tablename
             param_values.append(False) # dry run
-            query = f"CALL {workflows_temp}.{component['procedureName']}({','.join([str(p) for p in param_values])});"
+            query = f'''CALL {workflows_temp}.{component['procedureName']}(
+                {','.join([str(p) if p is not None else 'null' for p in param_values])}
+            );'''
             if verbose:
                 print(query)
             if metadata["provider"] == "bigquery":
