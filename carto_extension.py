@@ -325,7 +325,7 @@ def _upload_test_table_sf(filename, component):
                 values.append(f"ST_GEOGRAPHYFROMWKT('{value}')")
             else:
                 values.append(value)
-        cursor.execute(insert_sql, list(row.values()))
+        cursor.execute(insert_sql, values)
     cursor.close()
 
 
