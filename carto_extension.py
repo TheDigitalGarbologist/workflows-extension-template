@@ -8,6 +8,7 @@ import zipfile
 import json
 from uuid import uuid4
 import base64
+from shapely import wkt
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
@@ -242,6 +243,28 @@ def deploy(destination):
 
 
 def _upload_test_table_bq(filename, component):
+    schema = []
+    with open(filename) as f:
+        data = [json.loads(l) for l in f.readlines()]
+    for key, value in data[0].items():
+        if isinstance(value, int):
+            data_type = 'INT64'
+        elif isinstance(value, str):
+            try:
+                wkt.loads(value)
+                data_type = 'GEOGRAPHY'
+            except  Exception as e:
+                data_type = 'STRING'
+        elif isinstance(value, float):
+            data_type = 'FLOAT64'
+        else:
+            try:
+                wkt.loads(value)
+                data_type = 'GEOGRAPHY'
+            except  Exception as e:
+                data_type = 'STRING'
+        schema.append(bigquery.SchemaField(key, data_type))
+    print(schema)
     dataset_id = os.getenv('BQ_TEST_DATASET')
     table_id = f"_test_{component['name']}_{os.path.basename(filename).split('.')[0]}"
 
@@ -251,6 +274,7 @@ def _upload_test_table_bq(filename, component):
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
     job_config.autodetect = True
     job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
+    job_config.schema=schema
 
     with open(filename, "rb") as source_file:
         job = bq_client().load_table_from_file(
@@ -269,15 +293,25 @@ def _upload_test_table_sf(filename, component):
         data = [json.loads(l) for l in f.readlines()]
     table_id = f"_test_{component['name']}_{os.path.basename(filename).split('.')[0]}"
     create_table_sql = f'CREATE OR REPLACE TABLE {sf_workflows_temp}.{table_id} ('
+    data_types = []
     for key, value in data[0].items():
         if isinstance(value, int):
             data_type = 'NUMBER'
         elif isinstance(value, str):
-            data_type = 'VARCHAR'
+            try:
+                wkt.loads(value)
+                data_type = 'GEOGRAPHY'
+            except  Exception as e:
+                data_type = 'VARCHAR'
         elif isinstance(value, float):
             data_type = 'FLOAT'
         else:
-            data_type = 'VARCHAR'
+            try:
+                wkt.loads(value)
+                data_type = 'GEOGRAPHY'
+            except  Exception as e:
+                data_type = 'VARCHAR'
+        data_types.append(data_type)
         create_table_sql += f'{key} {data_type}, '
     create_table_sql = create_table_sql.rstrip(', ')
     create_table_sql += ');\n'
@@ -285,6 +319,12 @@ def _upload_test_table_sf(filename, component):
     cursor.execute(create_table_sql)
     for row in data:
         insert_sql = f"INSERT INTO {sf_workflows_temp}.{table_id} ({', '.join(row.keys())}) VALUES ({', '.join(['%s'] * len(row))})"
+        values = []
+        for i, value in enumerate(row.values()):
+            if data_types[i] == 'GEOGRAPHY':
+                values.append(f"ST_GEOGRAPHYFROMWKT('{value}')")
+            else:
+                values.append(value)
         cursor.execute(insert_sql, list(row.values()))
     cursor.close()
 
