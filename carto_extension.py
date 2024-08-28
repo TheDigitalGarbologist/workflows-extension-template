@@ -117,11 +117,11 @@ CREATE TABLE IF NOT EXISTS {WORKFLOWS_TEMP_PLACEHOLDER}.{EXTENSIONS_TABLENAME} (
 
 -- remove procedures from previous installations
 
-SET procedures =
+SET procedures = (
     SELECT SPLIT(procedures, ',') AS procedures
     FROM {WORKFLOWS_TEMP_PLACEHOLDER}.{EXTENSIONS_TABLENAME}
     WHERE name = '{metadata["name"]}'
-;
+);
 LOOP
     SET i = i + 1;
     IF i > ARRAY_LENGTH(procedures) THEN
