@@ -9,7 +9,6 @@ import json
 from uuid import uuid4
 import base64
 import re
-import urllib
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
@@ -504,7 +503,7 @@ def check():
 
 parser = argparse.ArgumentParser()
 parser.add_argument('action', nargs=1, type=str, choices=[
-                    'package', 'deploy', 'test', 'capture', 'check', 'update'])
+                    'package', 'deploy', 'test', 'capture', 'check'])
 parser.add_argument('-c','--component', help='Choose one component', type=str)
 parser.add_argument('-d','--destination', help='Choose an specific destination', type=str, required="deploy" in argv)
 parser.add_argument('-v','--verbose', help='Verbose mode', action='store_true')
