@@ -38,6 +38,14 @@ The `capture` and `test` actions support a `--component` parameter, which will m
 
 `$ python carto_extension.py capture --component=mycomponent`
 
+## Updating the carto_extension.py script
+
+Once you create your extension repository using this repo as a template, it will not be linked to the original repository. That means that you will not get the improvements and fixes that might arrive to the `carto_extension.py` that is used for packaging, capturing fixtures, testing, etc. To keep it in sync and get the latest changes, you can use the `update` command.
+
+`$ python carto_extension.py update`
+
+That will replace your current script with the latest version in the original template repository.
+
 ## Deploying the extension
 
 You can deploy the extension in a given destination (project.dataset in the case of BigQuery, database.schema in the case of Snowflake), using the `deploy` command with the following syntax:
