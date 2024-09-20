@@ -105,7 +105,7 @@ def create_sql_code_bq(metadata):
             procedures_code += "\n" + procedure_code
     procedures = [c["procedureName"] for c in metadata["components"]]
 
-    code = f'''
+    code = f"""
 DECLARE procedures STRING;
 DECLARE proceduresArray ARRAY<STRING>;
 DECLARE i INT64 DEFAULT 0;
@@ -143,8 +143,8 @@ WHERE name = '{metadata["name"]}';
 -- add to extensions table
 
 INSERT INTO {WORKFLOWS_TEMP_PLACEHOLDER}.{EXTENSIONS_TABLENAME} (name, metadata, procedures)
-VALUES ('{metadata["name"]}', '{json.dumps(metadata)}', '{','.join(procedures)}');
-    '''
+VALUES ('{metadata["name"]}', '''{json.dumps(metadata)}''', '{','.join(procedures)}');
+    """
 
     return code
 
