@@ -78,12 +78,14 @@ def create_metadata():
         with open(metadata_file, "r") as f:
             component_metadata = json.load(f)
             components.append(component_metadata)
+        '''
         help_file = os.path.join(
             components_folder, component, "doc", "README.md")
         with open(help_file, "r") as f:
             help_text = f.read()
             help_text = help_text.replace("\n", "\\n")
             component_metadata["help"] = help_text
+        '''
         icon_filename = component_metadata.get("icon")
         if icon_filename:
             icon_full_path = os.path.join(icon_folder, icon_filename)
@@ -515,6 +517,7 @@ if args.component and action not in ['capture', 'test']:
 if args.destination and action not in ['deploy']:
     parser.error("Destination can only be used with 'deploy' action")
 if action == 'package':
+    check()
     package()
 elif action == 'deploy':
     deploy(args.destination)
