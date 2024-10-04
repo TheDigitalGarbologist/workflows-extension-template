@@ -10,7 +10,7 @@
 
 3. Edit the `metadata.json` file in the root folder of the repo so it contains the correct information for the extension. [Learn more about the extension's metadata](./anatomy_of_an_extension.md#extensions-metadata).
 
-4. Copy the `components/template` folder and rename it with the name of the component that you're going to develop (i.e. `mycomponent`). It is important to avoid `-` in the name of the folder to  avoid errors in the data warehouse.
+4. Copy the `components/template` folder and rename it with the name of the component that you're going to develop (i.e. `mycomponent`).
 
 5. Edit the component metadata file in `components/mycomponent/metadata.json`. For a complete reference of the available options, see [this page](./doc/component_metadata.md).
 
