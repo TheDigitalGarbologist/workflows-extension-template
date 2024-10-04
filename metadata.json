@@ -9,16 +9,12 @@
     "provider": "bigquery",
     "details": [
         {
-            "name": "Author",
-            "value": "Author Name",
-            "link": {
-                "label": "Author website",
-                "href": "www.page.com"
-            }
-        },
-        {
             "name": "License",
             "value": "Apache 2.0"
+        },
+        {
+            "name": "Custom detail",
+            "value": "Value for custom detail"
         }
     ],
     "components": [
