@@ -25,6 +25,8 @@ The extension's metadata file defines attributes like its name, the group or cat
 
 Extension's metadata is defined in a [`metadata.json`](../metadata.json) file in the root folder of this repo.
 
+It's important to specify which data warehouse is compatible with your extension. For this, the `"provider"` property needs to be set to either `"bigquery"` or `"snowflake"`.
+
 In that file, you will see that there is a `details` array  that accepts different custom objects defined by `"name"` and `"value"` properties. 
 
 These details will render in the CARTO UI when displaying the extension details. This is an example: 
