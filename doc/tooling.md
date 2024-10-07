@@ -6,7 +6,7 @@ Some operations (namely `capture`, `test` and `deploy`) require authentication w
 
 If you are creating an extension for **BigQuery** connections, install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) and run the following in your console to authenticate:
 ```bash
-$ gcloud auth application-default login`
+$ gcloud auth application-default login
 ```
 
 If you are working with **Snowflake**, the `deploy` command will require that you set some environmental variables: 
