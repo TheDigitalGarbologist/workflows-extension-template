@@ -52,7 +52,7 @@ ___
 
 ### Components
 
-Components should aim to cover specific functionality, like adding a new column with a UUID, running an analysis and storing the result on a separate row or sending an HTTP request to a specific endpoint. 
+Components should aim to cover specific functionality, like adding a new column with a UUID, running an analysis and storing the result on an additional column or sending an HTTP request to a specific endpoint. 
 
 Tipically, a component receives one or more inputs; it has some settings that influence the execution of the code; and produce an output. 
 
@@ -95,16 +95,14 @@ As mentioned before, inputs defined in the metadata need to match the inputs of 
 ]
 ```
 
-the procedure should be declared as follows: 
+for those inputs, the procedure should be declared as follows: 
 ```sql
 CREATE OR REPLACE PROCEDURE ADD_FIXED_VALUE_COLUMN(
   input_table STRING, 
   value STRING
 )
 BEGIN
-    EXECUTE IMMEDIATE '''
-    SELECT *, ''' || value || ''' AS added_column
-    FROM ''' || input_table;
+    (...)
 END;
 ```
 ##### Outputs
@@ -133,6 +131,10 @@ BEGIN
   FROM ''' || input_table;
 END;
 ```
+
+>💡 **Tip**
+> 
+> There is an additional `dry_run BOOL` parameter that needs to be included in the procedure. It has been omitted for the sake of simplification. Please refer to [this section](./procedure.md#managing-the-execution-of-dry-run-queries) to understand how to use it.
 
 ##### Procedure's name
 Finally, in order to link our metadata with the procedure's code, we need to specify the procedure's name like: 

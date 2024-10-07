@@ -1,12 +1,13 @@
 # Extension Packages for CARTO Workflows
-Use this template repository to create extension packages for CARTO Workflows, enabling you to develop custom components tailored to your specific use cases. These packages can be easily distributed and installed within the Workflows application, extending its core functionality with new, specialized operations.
+Use this template repository as a framework for creating extension packages for CARTO Workflows, containing custom components that are tailored to your specific use cases. 
+
+These packages can be easily distributed and installed within the Workflows application, extending its core functionality with new, specialized operations.
 
 ![](https://cdn.prod.website-files.com/6345207a1b18e581fcf67604/66507f26948382ff94fa45be_components.jpg)
 
 Find more documentation about installing and managing extension packages in [this section of the CARTO documentation](https://docs.carto.com/carto-user-manual/workflows/extension-packages).
 
 > Currently, Extension Packages are only supported in Workflows created for **BigQuery** and **Snowflake** connections.
-___
 
 Learn more about building, testing, and distributing extension packages for CARTO Workflows in the following sections: 
 
