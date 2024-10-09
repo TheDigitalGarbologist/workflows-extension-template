@@ -463,8 +463,10 @@ def _param_type_to_bq_type(param_type):
         "Range",
         "Selection",
         "SelectionType",
-        "SelectColumnType," "SelectColumnAggregation",
-        "Column" "ColumnNumber",
+        "SelectColumnType",
+        "SelectColumnAggregation",
+        "Column",
+        "ColumnNumber",
         "SelectColumnNumber",
     ]:
         return ["STRING"]
@@ -488,8 +490,10 @@ def _param_type_to_sf_type(param_type):
         "Range",
         "Selection",
         "SelectionType",
-        "SelectColumnType," "SelectColumnAggregation",
-        "Column" "ColumnNumber",
+        "SelectColumnType",
+        "SelectColumnAggregation",
+        "Column",
+        "ColumnNumber",
         "SelectColumnNumber",
     ]:
         return ["STRING", "VARCHAR"]
