@@ -560,7 +560,7 @@ parser.add_argument(
     "action",
     nargs=1,
     type=str,
-    choices=["package", "deploy", "test", "capture", "check"],
+    choices=["package", "deploy", "test", "capture", "check", "update"],
 )
 parser.add_argument("-c", "--component", help="Choose one component", type=str)
 parser.add_argument(
