@@ -3,6 +3,7 @@
     "title": "Fixed value column",
     "group": "Template",
     "description": "This component adds a fixed value column to a table",
+    "version": "1.0.0",
     "icon": "component-default.svg",
     "inputs": [
         {
