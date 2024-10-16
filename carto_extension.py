@@ -613,6 +613,26 @@ def check():
     components_folder = os.path.join(current_folder, "components")
     for component in metadata["components"]:
         component_folder = os.path.join(components_folder, component["name"])
+        component_metadata_file = os.path.join(component_folder, "metadata.json")
+        with open(component_metadata_file, "r") as f:
+            component_metadata = json.load(f)
+        required_fields = ["name", "title", "group", "description", "icon", "version"]
+        for field in required_fields:
+            assert (
+                field in component_metadata
+            ), f"Component metadata is missing field '{field}'"
+    required_fields = [
+        "name",
+        "title",
+        "group",
+        "description",
+        "icon",
+        "version",
+        "lastUpdate",
+        "provider",
+    ]
+    for field in required_fields:
+        assert field in metadata, f"Extension metadata is missing field '{field}'"
 
     print("Extension correctly checked. No errors found.")
 
