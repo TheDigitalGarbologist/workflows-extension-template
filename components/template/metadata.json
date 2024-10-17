@@ -29,5 +29,6 @@
         }
     ],
     "procedureName": "ADD_FIXED_VALUE_COLUMN",
-    "version": "1"
+    "version": "1",
+    "usedEnvVars": []
 }

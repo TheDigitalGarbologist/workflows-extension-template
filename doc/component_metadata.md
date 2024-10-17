@@ -102,7 +102,7 @@ The name of the procedure stored in the `procedure.sql` file that will be called
 
 ## `usedEnvVars`
 
-Optionally, you can include an array with the list of environmental variables that your component will need. Those variables will be automatically declared and assigned, and you will have them available to be used in your component code.
+You can include an array with the list of environmental variables that your component will need. Those variables will be automatically declared and assigned, and you will have them available to be used in your component code.
 
 These are the variables that are currently supported:
 
@@ -113,3 +113,5 @@ These are the variables that are currently supported:
 -   `dataExportDefaultGCSBucket`
 -   `bigqueryProjectId`
 -   `bigqueryRegion`
+
+The property is not optional, so, in case you don't need environment variables in your component, use an empty array.
