@@ -6,15 +6,7 @@ The component procedure should be implemented in the `fullrun.sql` and `dryrun.s
 
 For implementing the logic of the component, you will have available a set of variable matching the names of the parameters declared in the `metadata.json` file, with both input and output parameters. These variables will contain the values selected by the user when configuring the component as part of a workflow.
 
-Additionally, the following variables will also be available, containing the values of certain environment variables that provide information about the context in which the workflow and the component are being executed:
-
--   `analyticsToolboxDataset`
--   `analyticsToolboxVersion`
--   `apiBaseUrl`
--   `accessToken`
--   `dataExportDefaultGCSBucket`
--   `bigqueryProjectId`
--   `bigqueryRegion`
+If you have declared environment variables in your component metadata (see [here](./component_metadata.md#usedenvvars)), they will also be created and they will be available to be used from your code.
 
 Below you can see an example of a stored procedure built following the approach defined above. This procedure takes a table and generates a new one that includes and additional column with a unique identifier.
 
