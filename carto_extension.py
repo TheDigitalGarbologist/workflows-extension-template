@@ -149,9 +149,13 @@ def get_procedure_code_bq(component):
             DECLARE __parsed JSON default PARSE_JSON(env_vars);
             {env_vars}
             IF (dry_run) THEN
+                BEGIN
                 {dryrun_code}
+                END;
             ELSE
+                BEGIN
                 {fullrun_code}
+                END;
             END IF;
         END;
         """
@@ -256,9 +260,13 @@ def get_procedure_code_sf(component):
             {env_vars}
             JSON_EXTRACT_PATH_TEXT
             IF (dry_run) THEN
+                BEGIN
                 {dryrun_code}
+                END;
             ELSE
+                BEGIN
                 {fullrun_code}
+                END;
             END IF;
         END;
         $$;
