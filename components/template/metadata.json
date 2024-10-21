@@ -5,6 +5,7 @@
     "description": "This component adds a fixed value column to a table",
     "version": "1.0.0",
     "icon": "component-default.svg",
+    "cartoEnvVars": [],
     "inputs": [
         {
             "name": "input_table",
@@ -16,7 +17,9 @@
             "name": "value",
             "title": "Column value",
             "description": "The value to add to the column",
-            "type": "String"
+            "type": "String",
+            "mode": "multiline",
+            "placeholder": "The value\nto add to the column"
         }
     ],
     "outputs": [
@@ -27,5 +30,6 @@
             "type": "Table"
         }
     ],
-    "procedureName": "ADD_FIXED_VALUE_COLUMN"
+    "procedureName": "ADD_FIXED_VALUE_COLUMN",
+    "version": "1"
 }
