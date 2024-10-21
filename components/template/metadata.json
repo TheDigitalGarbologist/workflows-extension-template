@@ -4,6 +4,7 @@
     "group": "Template",
     "description": "This component adds a fixed value column to a table",
     "icon": "component-default.svg",
+    "cartoEnvVars": [],
     "inputs": [
         {
             "name": "input_table",
@@ -29,6 +30,5 @@
         }
     ],
     "procedureName": "ADD_FIXED_VALUE_COLUMN",
-    "version": "1",
-    "usedEnvVars": []
+    "version": "1"
 }
