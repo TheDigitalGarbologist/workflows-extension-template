@@ -136,7 +136,7 @@ def get_procedure_code_bq(component):
     carto_env_vars = component["cartoEnvVars"] if "cartoEnvVars" in component else []
     env_vars = newline_and_tab.join(
         [
-            f"DECLARE {v} STRING DEFAULT TO_JSON_STRING(__parsed.{v})"
+            f"DECLARE {v} STRING DEFAULT TO_JSON_STRING(__parsed.{v});"
             for v in carto_env_vars
         ]
     )
