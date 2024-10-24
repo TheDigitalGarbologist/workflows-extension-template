@@ -5,6 +5,7 @@ from textwrap import dedent, indent
 from uuid import uuid4
 import argparse
 import base64
+import hashlib
 import json
 import os
 import re
@@ -83,14 +84,14 @@ def create_metadata():
         with open(metadata_file, "r") as f:
             component_metadata = json.load(f)
             components.append(component_metadata)
-        """
-        help_file = os.path.join(
-            components_folder, component, "doc", "README.md")
-        with open(help_file, "r") as f:
-            help_text = f.read()
-            help_text = help_text.replace("\n", "\\n")
-            component_metadata["help"] = help_text
-        """
+
+        fullrun_file = os.path.join(components_folder, component, "src", "fullrun.sql")
+        with open(fullrun_file, "r") as f:
+            fullrun_code = f.read()
+        code_hash = (
+            int(hashlib.sha256(fullrun_code.encode("utf-8")).hexdigest(), 16) % 10**8
+        )
+        component_metadata["procedureName"] = f"__proc_{component}_{code_hash}"
         icon_filename = component_metadata.get("icon")
         if icon_filename:
             icon_full_path = os.path.join(icon_folder, icon_filename)
