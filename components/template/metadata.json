@@ -29,6 +29,5 @@
             "description": "The table with the column added",
             "type": "Table"
         }
-    ],
-    "version": "1"
+    ]
 }
