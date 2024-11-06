@@ -130,7 +130,7 @@ def get_procedure_code_bq(component):
     params_string = newline_and_tab.join(
         [
             f"{p['name']} {_param_type_to_bq_type(p['type'])[0]}"
-            for p in component["inputs"]
+            for p in component["inputs"] + component["outputs"]
         ]
     )
 
@@ -237,9 +237,10 @@ def get_procedure_code_sf(component):
     params_string = newline_and_tab.join(
         [
             f"{p['name']} {_param_type_to_sf_type(p['type'])[0]}"
-            for p in component["inputs"]
+            for p in component["inputs"] + component["outputs"]
         ]
     )
+
     carto_env_vars = component["cartoEnvVars"] if "cartoEnvVars" in component else []
     env_vars = newline_and_tab.join(
         [
