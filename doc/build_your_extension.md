@@ -20,7 +20,7 @@
 
 > 💡 **Tip**
 >
-> Please read [this section](./anatomy_of_an_extension.md#joining-metadata-and-logic) carefully to understand how to define inputs and outputs in both metadata and the stored procedure.
+> Please read [this section](./procedure.md#variables) carefully to understand how to define inputs and outputs and use them as variables in your stored procedures.
 
 7. (Optional) Write the component documentation in the `components/mycomponent/doc/README.md` file and/or other markdown files in that same directory.
 

@@ -64,165 +64,23 @@ In Workflows, most components produce a table that contains the same columns fro
 
 Each component should be created on a separate folder inside [`/components`](../components/) and it's defined by **metadata** and **logic** (implemented as a stored procedure). 
 #### Component's metadata
-Each component has its own [`metadata.json`](../components/template/metadata.json) file, where you can define a name, category, description, icon, etc. And most importantly, **inputs**, **outputs** and a link with the corresponding stored procedure.
+Each component has its own [`metadata.json`](../components/template/metadata.json) file, where you can define a name, category, description, icon, etc. And most importantly, **inputs**, **outputs** and some optional environmental variables.
 
 Find more information about the component's metadata in the specific [documentation](./component_metadata.md).
 
 #### Logic
-The logic for each component is defined as an stored procedure in the [`components/<component_name>/src/procedure.sql`](../components/template/src/procedure.sql) file.
+The logic for each component is defined as [stored procedures](procedure.md) in the [`components/<component_name>/src/fullrun.sql`](../components/template/src/fullrun.sql) and [`components/<component_name>/src/dryrun.sql`](../components/template/src/dryrun.sql)file.
 
 Find a more complete documentation about creating stored procedures for custom components in [this documentation](./procedure.md).
 
-#### Joining metadata and logic
-Inputs, settings, and outputs of a component are defined in the metadata file, and then used in the stored procedure. 
-
-For these two parts of a custom component to work well together, we just need to ensure consistency between what's declared in metadata and what's used in the stored procedure.
-
-For this example we'll create a very simple component that just adds a new column with a fixed value.
-
-##### Inputs
-As mentioned before, inputs defined in the metadata need to match the inputs of the stored procedure. For example: 
-```json
-"inputs": [
-    {
-      "name": "input_table",
-      "title": "Input A",
-      "description": "A table to be used as input for my component",
-      "type": "Table"
-    },
-    {
-      "name": "value",
-      "title": "Value",
-      "description": "A value that will be used to populate the new column",
-      "type": "String"
-  }
-]
-```
-
-for those inputs, the procedure should be declared as follows: 
-```sql
-CREATE OR REPLACE PROCEDURE ADD_FIXED_VALUE_COLUMN(
-  input_table STRING, 
-  value STRING
-)
-BEGIN
-    (...)
-END;
-```
-##### Outputs
-Outputs work the same way: they need to be defined in metadata, taken into account in your procedure's declaration and used in the code. Extending the previous example, we would have this in metadata: 
-```json
-"outputs": [
-    {
-        "name": "output_table",
-        "title": "Output table",
-        "description": "The table with the new column added",
-        "type": "Table"
-    }
-]
-```
-And our procedure would look like: 
-```sql
-CREATE OR REPLACE PROCEDURE ADD_FIXED_VALUE_COLUMN(
-  input_table STRING, 
-  value STRING, 
-  output_table STRING
-)
-BEGIN
-  EXECUTE IMMEDIATE '''
-  CREATE TABLE IF NOT EXISTS ''' || output_table || '''
-  AS SELECT *, ''' || value || ''' AS added_column
-  FROM ''' || input_table;
-END;
-```
-
->💡 **Tip**
-> 
-> There is an additional `dry_run BOOL` parameter that needs to be included in the procedure. It has been omitted for the sake of simplification. Please refer to [this section](./procedure.md#managing-the-execution-of-dry-run-queries) to understand how to use it.
-
-##### Procedure's name
-Finally, in order to link our metadata with the procedure's code, we need to specify the procedure's name like: 
-```json
-"procedureName": "ADD_FIXED_VALUE_COLUMN"
-```
-And as showed in the previous examples, our procedure is created like: 
-```sql
-CREATE OR REPLACE PROCEDURE ADD_FIXED_VALUE_COLUMN(...)
-```
+#### Inputs, outputs and `cartoEnvVars` as variables
+All the inputs, outputs and environmental variables declared in the [component's metadata](../components/template/metadata.json) are accessible as variables in the stored procedures (both `dryrun.sql` and `fullrun.sql`). Read [this section](procedure.md#variables) to learn more about it.
 ___
 
 ### Test
 Each component can also have its own set of tests to validate the results when running the component. 
 
 Tests are optional, but highly recommended.
-
-The content of the [`/components/<component_name>/test/`](../components/template/test/) is as follows: 
-``` 
-test/
-    ├── test.json
-    ├── table1.ndjson
-    └── fixtures/
-        ├── 1.json
-        └── 2.json
-```
-##### `test.json`
-Contains an array with the definition of each test, specifying the `id` of each test and the values for each input: 
-```json
-[
-    {
-        "id": 1,
-        "inputs": {
-            "input_table": "table1",
-            "value": "test"
-        }
-    },
-    {
-        "id": 2,
-        "inputs": {
-            "input_table": "table1",
-            "value": "test2"
-        }
-    }
-]
-```
-##### `table1.ndjson`
-An NDJSON file that contains the data to be used in the test. It can have any arbitrary name, but make sure it's correctly referenced in `input_table` in your `test.json` file. For example: 
-
-```json
-{"id":1,"name":"Alice"}
-{"id":2,"name":"Bob"}
-{"id":3,"name":"Carol"}
-```
-##### `fixtures/<id>.json`
-
-The fixture files contain the expected result for each test defined in `test.json`. For example, for our test `1` we would have a `1.json` file with this content: 
-```json
-{
-  "output_table": [
-    {
-      "name": "Bob",
-      "id": 2,
-      "fixed_value_col": "test"
-    },
-    {
-      "name": "Carol",
-      "id": 3,
-      "fixed_value_col": "test"
-    },
-    {
-      "name": "Alice",
-      "id": 1,
-      "fixed_value_col": "test"
-    }
-  ]
-}
-```
-
-When developing new components, the `fixture` folder and its content will be automatically generated by running the `capture` command: 
-
-```bash
-$ python carto_extension.py capture
-```
 
 Learn more about how to run these tests in your data warehouse in [this document](./running-tests.md).
 ___
