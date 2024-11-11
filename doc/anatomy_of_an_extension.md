@@ -9,13 +9,15 @@ extension-package/
     │   ├── doc/
     │   ├── test/
     │   ├── src/
-    │   │   └── procedure.sql
+    |   |   ├── dryrun.sql  
+    │   │   └── fullrun.sql
     │   └── metadata.json
     └── component_B/
         ├── doc/
         ├── test/
         ├── src/
-        │   └── procedure.sql
+        |   ├── dryrun.sql
+        │   └── fullrun.sql
         └── metadata.json
 ```
 ___
