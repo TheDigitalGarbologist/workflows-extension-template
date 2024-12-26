@@ -1,6 +1,6 @@
 # Component metadata
 
-Here you can find additional information about the different properties that must be contained in the metadata object of the component.
+Here you can find a reference of the different properties that must be contained in the metadata object of the component.
 
 ## `name`
 
@@ -39,7 +39,7 @@ These are the available types to be used. Notice that some of them have addition
         "name": "converttometers",
         "title": "Convert to meters",
         "description": "Convert values to meters",
-        "type": "Boolean"
+        "type": "Boolean" //asdfcp 
     }
     ```
 -   `String`
@@ -58,7 +58,7 @@ These are the available types to be used. Notice that some of them have addition
         "name": "distance",
         "title": "Distance",
         "description": "The buffer distance",
-        "type": "number"
+        "type": "Number"
     }
     ```
 

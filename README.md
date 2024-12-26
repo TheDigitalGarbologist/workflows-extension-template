@@ -19,7 +19,7 @@ Read it carefully to understand how inputs, settings and outputs are defined alo
 It also contains a description of the basic elements required to define automated tests for your component.
 
 There are also specific pages that go in detail about some of the pieces needed to build an extension. Check them once you're familiar with the basic structure of a component: 
-
+* [**Extension's metadata**](./doc/extension_metadata.md)
 * [**Component's metadata**](./doc/component_metadata.md)
 * [**Stored procedure**](./doc/procedure.md)
 * [**Icons**](./doc/icons.md)
