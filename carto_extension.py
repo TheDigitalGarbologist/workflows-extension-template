@@ -84,6 +84,9 @@ def create_metadata():
         with open(metadata_file, "r") as f:
             component_metadata = json.load(f)
             component_metadata["group"] = metadata["title"]
+            component_metadata["cartoEnvVars"] = component_metadata.get(
+                "cartoEnvVars", []
+            )
             components.append(component_metadata)
 
         fullrun_file = os.path.join(components_folder, component, "src", "fullrun.sql")
