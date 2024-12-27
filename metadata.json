@@ -1,24 +1,33 @@
 {
     "name": "template",
     "title": "Template",
-    "group": "template",
+    "industry": "Templates",
     "description": "A template extension for creating new extensions",
     "icon": "extension-default.svg",
     "version": "1.0.0",
     "lastUpdate": "2024-01-31",
     "provider": "bigquery",
+    "author": {
+        "value": "CARTO",
+        "link": {
+            "label": "CARTO",
+            "href": "https://carto.com"
+        }
+    },
+    "license": {
+        "value": "CARTO Proprietary",
+        "link": {
+            "label": "CARTO Proprietary",
+            "href": "https://carto.com/legal"
+        }
+    },
     "details": [
         {
-            "name": "License",
-            "value": "Apache 2.0"
-        },
-        {
-            "name": "Author",
-            "value": "Author's name"
-        },
-        {
-            "name": "Another custom detail",
-            "value": "Value for another custom detail"
+            "name": "Optional detail",
+            "link": {
+                "label": "Whatever",
+                "href": "https://carto.com/"
+            }
         }
     ],
     "components": [
