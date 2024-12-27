@@ -143,7 +143,7 @@ def get_procedure_code_bq(component):
         ]
     )
     procedure_code = f"""\
-        CREATE OR REPLACE PROCEDURE {WORKFLOWS_TEMP_PLACEHOLDER}.{component["procedureName"]}(
+        CREATE OR REPLACE PROCEDURE {WORKFLOWS_TEMP_PLACEHOLDER}.`{component["procedureName"]}`(
             {params_string},
             dry_run BOOLEAN,
             env_vars STRING
