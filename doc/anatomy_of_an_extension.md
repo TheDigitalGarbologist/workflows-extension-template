@@ -31,6 +31,8 @@ The extension's metadata file defines attributes like its name, the group or cat
 
 Extension's metadata is defined in a [`metadata.json`](../metadata.json) file in the root folder of this repo.
 
+Find more information about the extension's metadata in the specific [documentation](./extension_metadata.md).
+
 It's important to specify which data warehouse is compatible with your extension. For this, the `"provider"` property needs to be set to either `"bigquery"` or `"snowflake"`.
 
 All properties in the template `metadata.json` file are mandatory.
