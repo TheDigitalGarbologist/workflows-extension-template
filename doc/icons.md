@@ -19,7 +19,7 @@ desired scale and surrounding white space.
 
 8px
 
-![icon](./80px.png)
+![icon](./img/80px.png)
 
 ## Component icons
 
@@ -38,4 +38,4 @@ desired scale and surrounding white space.
 
 4px
 
-![icon](./40px.png)
+![icon](./img/40px.png)
