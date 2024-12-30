@@ -83,8 +83,7 @@ There are different types of inputs that can be used in the `inputs` array. Each
     "name": "string_input",
     "title": "String input",
     "type": "String",
-    "mode": "multiline",
-    "default": "Default string content" // Optional
+    "mode": "multiline"
 }
 ```
 ![String input](./img/input_string.png)
@@ -100,8 +99,7 @@ The string entered by the user will be passed as a multiline string in the call 
 {
     "name": "string_sql_input",
     "title": "String SQL input",
-    "type": "StringSql",
-    "default": "SELECT * FROM input_table" // Optional
+    "type": "StringSql"
 }
 ```
 ![StringSql input](./img/input_stringsql.png)
@@ -117,11 +115,10 @@ The string entered by the user will be passed as a multiline string in the call 
     "type": "Number",
     "min": 0,
     "max": 100,
-    "default": 10,
-    "mode": "slider"
+    "default": 10
 }
 ```
-Use `"mode": "slider"` to render a slider in the UI.
+The will generate a simple numeric input. Add `"mode": "slider"` to render a slider in the UI.
 
 ![Number input](./img/input_number_slider.png)
 
@@ -132,7 +129,7 @@ Use `"mode": "slider"` to render a slider in the UI.
     "name": "boolean_input",
     "title": "Boolean input",
     "type": "Boolean",
-    "default": true // Optional
+    "default": true
 }
 ```
 
@@ -143,8 +140,7 @@ Use `"mode": "slider"` to render a slider in the UI.
     "name": "selection_input",
     "title": "Selection input",
     "type": "Selection",
-    "options": ["Option 1", "Option 2", "Option 3"],
-    "default": "Option 2" // Optional
+    "options": ["Option 1", "Option 2", "Option 3"]
 }
 ```
 ![Selection input](./img/input_selection.png)
@@ -152,6 +148,8 @@ Use `"mode": "slider"` to render a slider in the UI.
 Use `"mode": "multiple"` to render a multiselect dropdown in the UI.
 
 ![Selection input](./img/input_selection_multiple.png)
+
+When using `"mode": "multiple"`, the component will generate a plain list of values in the SQL call to the store procedure.
 
 ### Range
 **`Range`** is an input type that allows selecting a range of values. It generates a range input in the UI.
