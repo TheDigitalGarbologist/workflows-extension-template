@@ -105,17 +105,6 @@ def create_metadata():
     return metadata
 
 
-env_var_names = [
-    "analyticsToolboxDataset",
-    "analyticsToolboxVersion",
-    "apiBaseUrl",
-    "accessToken",
-    "dataExportDefaultGCSBucket",
-    "bigqueryProjectId",
-    "bigqueryRegion",
-]
-
-
 def get_procedure_code_bq(component):
     current_folder = os.path.dirname(os.path.abspath(__file__))
     components_folder = os.path.join(current_folder, "components")

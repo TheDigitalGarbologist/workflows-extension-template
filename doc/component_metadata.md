@@ -3,6 +3,7 @@
 Here you can find a reference of the different properties that must be contained in the metadata object of the component.
 
 This is the expected structure of the metadata file:
+
 ```json
 {
     "name": "component_name",
@@ -33,19 +34,20 @@ This is the expected structure of the metadata file:
     ]
 }
 ```
+
 Some important notes about the metadata structure:
 
-* `name`: A unique identifier for the component that matches its folder name
-* `title`: A human-readable title displayed in the UI
-* `description`: A brief explanation of what the component does
-* `version`: The semantic version number of the component
-* `icon`: The SVG icon filename to display (must exist in icons folder)
-* `externalReference`: Optional object with label and URL for external documentation
-    * `label`: The label to display in the UI
-    * `href`: The URL to the external documentation
-* `cartoEnvVars`: Array of environment variables the component needs access to
-* `inputs`: Array of input parameters the component accepts
-* `outputs`: Array of output parameters the component produces
+-   `name`: A unique identifier for the component that matches its folder name
+-   `title`: A human-readable title displayed in the UI
+-   `description`: A brief explanation of what the component does
+-   `version`: The semantic version number of the component
+-   `icon`: The SVG icon filename to display (must exist in icons folder)
+-   `externalReference`: Optional object with label and URL for external documentation
+    -   `label`: The label to display in the UI
+    -   `href`: The URL to the external documentation
+-   `cartoEnvVars`: Array of environment variables the component needs access to
+-   `inputs`: Array of input parameters the component accepts
+-   `outputs`: Array of output parameters the component produces
 
 ## Inputs
 
@@ -64,7 +66,7 @@ Some important notes about the metadata structure:
         "name": "converttometers",
         "title": "Convert to meters",
         "description": "Convert values to meters",
-        "type": "Boolean" //asdfcp 
+        "type": "Boolean" //asdfcp
     }
     ```
 -   `String`
@@ -134,5 +136,6 @@ These are the variables that are currently supported:
 -   `dataExportDefaultGCSBucket`
 -   `bigqueryProjectId`
 -   `bigqueryRegion`
+-   `tempStoragePath`
 
 The property is not optional, so, in case you don't need environment variables in your component, use an empty array.
