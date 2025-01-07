@@ -37,78 +37,198 @@ This is the expected structure of the metadata file:
 
 Some important notes about the metadata structure:
 
--   `name`: A unique identifier for the component that matches its folder name
--   `title`: A human-readable title displayed in the UI
--   `description`: A brief explanation of what the component does
--   `version`: The semantic version number of the component
--   `icon`: The SVG icon filename to display (must exist in icons folder)
--   `externalReference`: Optional object with label and URL for external documentation
-    -   `label`: The label to display in the UI
-    -   `href`: The URL to the external documentation
--   `cartoEnvVars`: Array of environment variables the component needs access to
--   `inputs`: Array of input parameters the component accepts
--   `outputs`: Array of output parameters the component produces
+* `name`: A unique identifier for the component that matches its folder name
+* `title`: A human-readable title displayed in the UI
+* `description`: A brief explanation of what the component does
+* `version`: The semantic version number of the component
+* `icon`: The SVG icon filename to display (must exist in icons folder)
+* `externalReference`: Optional object with label and URL for external documentation
+    * `label`: The label to display in the UI
+    * `href`: The URL to the external documentation
+* `cartoEnvVars`: Array of environment variables the component needs access to. The only supported variables are the ones listed in the [CARTO environment variables](#carto-environment-variables) section. The option is mandatory but can be an empty array if the component doesn't need any environment variables.
+* `inputs`: Array of input parameters the component accepts
+* `outputs`: Array of output parameters the component produces
 
 ## Inputs
 
--   `Table`
-    ```json
-    {
-        "name": "inputtable",
-        "title": "Input table",
-        "description": "The input table",
-        "type": "Table"
-    }
-    ```
--   `Boolean`
-    ```json
-    {
-        "name": "converttometers",
-        "title": "Convert to meters",
-        "description": "Convert values to meters",
-        "type": "Boolean" //asdfcp
-    }
-    ```
--   `String`
-    ```json
-    {
-        "name": "selectstatement",
-        "title": "SELECT statement",
-        "description": "The SELECT statement to run",
-        "type": "String"
-    }
-    ```
--   `Number` (it accepts `min`, `max` and `default` properties)
+There are different types of inputs that can be used in the `inputs` array. 
 
+There are different options for each input that determine how the input will be rendered in the UI.
+
+### Generic options for all inputs
+
+All inputs support the following generic options:
+
+* `placeholder`: A placeholder text to display in the input.
+* `optional`: A boolean to indicate if the input is optional.
+* `default`: A default value to use for the input.
+* `helper`: A helper text to display in the input. It will be displayed in a tooltip when hovering over the (?) icon next to the input.
+* `advanced`: A boolean to indicate if the input is advanced. If true, the input will be under _Advanced options_ in the UI.
+* `showIf`: An array of conditions to show the input, based on selected values in other inputs. The input will be shown only if all the conditions are met. For example, this would make the input visible only if the user selects _"Option 2"_ in the `selection_input` input:
     ```json
-    {
-        "name": "distance",
-        "title": "Distance",
-        "description": "The buffer distance",
-        "type": "Number"
-    }
+    "showIf": [{
+        "parameter": "selection_input",
+        "value": "Option 2"
+    }]
     ```
 
--   `Selection`
-    ```json
+### Input types
+Each input type has its own properties and will be rendered in the UI in a different way. The following are the supported input types and their properties:
+
+#### Table
+**`Table`** is a special input type that represent an input connection in Workflow's node. You can use the `name` property to reference the input's FQN in the component's logic.
+```json
+{
+    "name": "input_table",
+    "title": "Input table",
+    "type": "Table"
+}
+```
+
+#### Column
+**`Column`** is an input type that allows selecting a column from an input table specified as `parent`. The `dataType` property is used to specify the data type of the columns that will be listed in the UI.
+```json
     {
-        "name": "units",
-        "title": "Units",
-        "description": "Units to use",
-        "type": "Selection",
-        "options": ["meters", "miles"]
+        "name": "column",
+        "title": "Column value",
+        "parent": "input_table",
+        "dataType": ["string", "boolean", "geography"],
+        "type": "Column"
     }
-    ```
--   `Column`
-    ```json
-    {
-        "name": "geocol",
-        "title": "Geo column",
-        "description": "The column containing geometries",
-        "type": "Column",
-        "parent": "source_table"
-    }
-    ```
+```
+![Column input](./img/input_column.png)
+
+
+#### String
+**`String`** is an input type that allows entering a single-line string value. 
+    
+```json
+{
+    "name": "string_input",
+    "title": "String input",
+    "type": "String"
+}
+```
+Using `"mode": "multiline"` will render a multiline textarea in the UI.
+
+![String input](./img/input_string.png)
+
+The string entered by the user will be passed as a multiline string in the call to the stored procedure generated by workflows. 
+
+**Tip:** 💡 Make sure to handle the case when the user enters a string with multiple lines in your SQL code in the component's stored procedure.
+
+#### StringSql
+**`StringSql`** is an input type that allows entering a string value. It generates a code-style input linted as SQL in the UI that can be expanded to a larger dialog.
+
+```json
+{
+    "name": "string_sql_input",
+    "title": "String SQL input",
+    "type": "StringSql"
+}
+```
+![StringSql input](./img/input_stringsql.png)
+
+**Tip:** 💡 The content of the input will be passed as a plain SQL string in the call to the stored procedure generated by workflows. Users will need to handle quotation to make sure the string is valid SQL.
+
+#### Number
+**`Number`** is an input type that allows entering a number value. It generates a number input in the UI. The `min`, `max` and `default` properties are optional and can be used to set the minimum and maximum values and the default value for the input. 
+```json
+{
+    "name": "number_input",
+    "title": "Number input",
+    "type": "Number",
+    "min": 0,
+    "max": 100,
+    "default": 10
+}
+```
+The above will generate a simple numeric input. You can optionally add `"mode": "slider"` to render a slider in the UI.
+
+![Number input](./img/input_number_slider.png)
+
+#### Boolean
+**`Boolean`** is an input type that allows selecting a boolean value. It generates a checkbox in the UI.
+```json
+{
+    "name": "boolean_input",
+    "title": "Boolean input",
+    "type": "Boolean",
+    "default": true
+}
+```
+
+#### Selection
+**`Selection`** is an input type that allows selecting a value from a list of options. It generates a dropdown in the UI.
+```json
+{
+    "name": "selection_input",
+    "title": "Selection input",
+    "type": "Selection",
+    "options": ["Option 1", "Option 2", "Option 3"]
+}
+```
+![Selection input](./img/input_selection.png)
+
+Use `"mode": "multiple"` to render a multiselect dropdown in the UI.
+
+![Selection input](./img/input_selection_multiple.png)
+
+When using `"mode": "multiple"`, the component will generate a plain list of values in the SQL call to the store procedure.
+
+#### Range
+**`Range`** is an input type that allows selecting a range of values. It generates a range input in the UI.
+```json
+{
+    "name": "range_input",
+    "title": "Range input",
+    "type": "Range"
+}
+```
+![Range input](./img/input_range.png)
+
+The `Range` type generates an array with two values, the minimum and maximum values. E.g. `["10", "1000"]`.
+
+#### Json
+**`Json`** is an input type that allows entering a JSON value. It generates a code-style text area linted as JSON in the UI that can be expanded to a larger dialog.
+```json
+{
+    "name": "json_input",
+    "title": "JSON input",
+    "type": "Json"
+}
+```
+![Json input](./img/input_json.png)
+
+The content of the input will be passed as a plain JSON object in the call to the stored procedure generated by workflows.
+
+#### GeoJson
+**`GeoJson`** is an input type that allows entering a GeoJSON value. It generates a code-style text area linted as GeoJSON in the UI that can be expanded to a larger dialog.
+```json
+{
+    "name": "geojson_input",
+    "title": "GeoJSON input",
+    "type": "GeoJson"
+}
+```
+![GeoJson input](./img/input_geojson.png)
+
+The content of the input will be passed as a plain GeoJSON object in the call to the stored procedure generated by workflows.
+
+#### GeoJsonDraw
+**`GeoJsonDraw`** is an input type that allows drawing a GeoJSON object. It generates a map in the UI where the user can draw a GeoJSON object.
+```json
+{
+    "name": "geojson_draw_input",
+    "title": "GeoJSON draw input",
+    "type": "GeoJsonDraw"
+}
+```
+![GeoJsonDraw input](./img/input_geojson_draw.png)
+![GeoJsonDraw input](./img/input_geojson_draw_dialog.png)
+
+The GeoJSON generated by drawing with this input will be passed as a plain GeoJSON object in the call to the stored procedure generated by workflows.
+
 
 ## Outputs
 
@@ -116,7 +236,7 @@ It should contain an array of output elements. Since outputs generated by workfl
 
 ```json
 {
-    "name": "outputtable",
+    "name": "output_table",
     "title": "Output table",
     "description": "The output table",
     "type": "Table"

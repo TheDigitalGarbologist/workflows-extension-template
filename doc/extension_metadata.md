@@ -29,15 +29,17 @@ This is the expected structure of the metadata file:
     "details": [
         {
             "name": "Optional detail 1",
+            "value": "Optional detail value",
             "link": {
-                "label": "Optional detail",
+                "label": "Optional detail value",
                 "href": "https://optional_detail_url/"
             }
         },
         {
             "name": "Optional detail 2",
+            "value": "Optional detail value",
             "link": {
-                "label": "Optional detail",
+                "label": "Optional detail value",
                 "href": "https://optional_detail_url/"
             }
         }
@@ -57,5 +59,5 @@ Some important notes:
 * The `author` and `license` objects can be rendered as a link or a string. If the `link` property is not provided, the `value` property will be rendered as a string.
 * The `icon` property must be the name of a valid SVG file in the `icons` folder.
 * It's important to specify which data warehouse is compatible with your extension. For this, the `"provider"` property needs to be set to either `"bigquery"` or `"snowflake"`.
-* Each element in the `details` array will be rendered in the extension's details page.
+* Each element in the `details` array will be rendered in the extension's details page. Provide either a `link` or a `value` property. If both are provided, the `link` property will be rendered as a link and the `value` property will be ignored.
 * The `components` object must contain an array of all the components included in the extension.
