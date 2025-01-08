@@ -439,6 +439,13 @@ def _get_test_results(metadata, component):
         components = metadata["components"]
     current_folder = os.path.dirname(os.path.abspath(__file__))
     components_folder = os.path.join(current_folder, "components")
+
+    project = os.getenv("BQ_TEST_PROJECT")
+    assert project, "BQ_TEST_PROJECT environment variable is not set"
+
+    dataset = os.getenv("BQ_TEST_DATASET")
+    assert dataset, "BQ_TEST_DATASET environment variable is not set"
+
     for component in components:
         component_folder = os.path.join(components_folder, component["name"])
         test_folder = os.path.join(component_folder, "test")
@@ -449,7 +456,12 @@ def _get_test_results(metadata, component):
         # run tests
         test_configuration_file = os.path.join(test_folder, "test.json")
         with open(test_configuration_file, "r") as f:
-            test_configurations = json.load(f)
+            test_configurations = json.loads(
+                f.read()
+                .replace("${BQ_TEST_PROJECT}", project)
+                .replace("${BQ_TEST_DATASET}", dataset)
+            )
+
         tables = {}
         component_results = {}
         for test_configuration in test_configurations:
