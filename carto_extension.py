@@ -371,8 +371,26 @@ def _upload_test_table_bq(filename, component):
     job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
 
     with open(filename, "rb") as source_file:
+        project = os.getenv("BQ_TEST_PROJECT")
+        assert project, "BQ_TEST_PROJECT environment variable is not set"
+
+        dataset = os.getenv("BQ_TEST_DATASET")
+        assert dataset, "BQ_TEST_DATASET environment variable is not set"
+
+        processed = io.BytesIO()
+        for line in source_file:
+            # TODO: generalize for all variables?
+            processed.write(
+                line
+                .decode('utf-8')
+                .replace("${BQ_TEST_PROJECT}", project)
+                .replace("${BQ_TEST_DATASET}", dataset)
+                .encode('utf-8')
+            )
+        processed.seek(0)
+
         job = bq_client().load_table_from_file(
-            source_file,
+            processed,
             table_ref,
             job_config=job_config,
         )
