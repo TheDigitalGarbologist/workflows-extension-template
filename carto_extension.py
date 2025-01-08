@@ -11,6 +11,7 @@ import os
 import re
 import snowflake.connector
 import zipfile
+import io
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
