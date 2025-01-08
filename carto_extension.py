@@ -524,6 +524,10 @@ def test(component):
         for test_id, outputs in results[component["name"]].items():
             test_folder = os.path.join(component_folder, "test", "fixtures")
             test_filename = os.path.join(test_folder, f"{test_id}.json")
+            if str(test_id).startswith("skip_"):
+                # Don't compare results, it will only throw an error
+                # if there is an issue when running on BigQuery
+                continue
             with open(test_filename, "r") as f:
                 expected = json.load(f)
                 for output_name, output in outputs.items():
