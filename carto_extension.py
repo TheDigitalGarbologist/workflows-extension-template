@@ -593,7 +593,7 @@ def capture(component):
             os.makedirs(test_folder, exist_ok=True)
             test_filename = os.path.join(test_folder, f"{test_id}.json")
             with open(test_filename, "w") as f:
-                f.write(json.dumps(outputs, indent=2))
+                f.write(json.dumps(outputs, indent=2, default=str))
     print("Fixtures correctly captured.")
 
 
