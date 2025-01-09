@@ -254,7 +254,6 @@ def get_procedure_code_sf(component):
         $$
         BEGIN
             {env_vars}
-            JSON_EXTRACT_PATH_TEXT
             IF (dry_run) THEN
                 BEGIN
                 {dryrun_code}
