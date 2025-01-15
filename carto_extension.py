@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from google.cloud import bigquery
 from sys import argv
 from textwrap import dedent, indent
@@ -18,6 +18,7 @@ EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
 WORKFLOWS_TEMP_PLACEHOLDER = "@@workflows_temp@@"
 
 load_dotenv()
+ENV_VALUES = dotenv_values(".env")
 
 bq_workflows_temp = f"`{os.getenv('BQ_TEST_PROJECT')}.{os.getenv('BQ_TEST_DATASET')}`"
 sf_workflows_temp = f"{os.getenv('SF_TEST_DATABASE')}.{os.getenv('SF_TEST_SCHEMA')}"
@@ -360,6 +361,28 @@ def deploy(destination):
         deploy_sf(metadata, destination)
 
 
+def substitute_dotenv(text: str,  env: dict[str, str]) -> str:
+    """Substitute all variables within a .env file in a string.
+
+    For a given string, all the variables using the syntax `${variable_name}`
+    will be interpolated with their values in the provided .env file. It will
+    raise a ValueError if any variable name is not present as a key in the
+    file.
+    """
+    pattern = r"\${([a-zA-Z0-9_]+)}"
+
+    for variable in re.findall(pattern, text, re.MULTILINE):
+        if variable not in env:
+            raise ValueError(
+                f"Variable {variable} must be interpolated in the results but "
+                f"is not provided in .env"
+            )
+
+        text = text.replace(f"${{{variable}}}", env[variable])
+
+    return text
+
+
 def _upload_test_table_bq(filename, component):
     dataset_id = os.getenv("BQ_TEST_DATASET")
     table_id = f"_test_{component['name']}_{os.path.basename(filename).split('.')[0]}"
@@ -372,22 +395,11 @@ def _upload_test_table_bq(filename, component):
     job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
 
     with open(filename, "rb") as source_file:
-        project = os.getenv("BQ_TEST_PROJECT")
-        assert project, "BQ_TEST_PROJECT environment variable is not set"
-
-        dataset = os.getenv("BQ_TEST_DATASET")
-        assert dataset, "BQ_TEST_DATASET environment variable is not set"
-
         processed = io.BytesIO()
         for line in source_file:
-            # TODO: generalize for all variables?
-            processed.write(
-                line
-                .decode('utf-8')
-                .replace("${BQ_TEST_PROJECT}", project)
-                .replace("${BQ_TEST_DATASET}", dataset)
-                .encode('utf-8')
-            )
+            processed_line = substitute_dotenv(line.decode("utf-8"), ENV_VALUES)
+            processed.write(processed_line .encode("utf-8"))
+
         processed.seek(0)
 
         job = bq_client().load_table_from_file(
@@ -403,7 +415,7 @@ def _upload_test_table_bq(filename, component):
 
 def _upload_test_table_sf(filename, component):
     with open(filename) as f:
-        data = [json.loads(l) for l in f.readlines()]
+        data = [json.loads(substitute_dotenv(l, ENV_VALUES)) for l in f.readlines()]
     table_id = f"_test_{component['name']}_{os.path.basename(filename).split('.')[0]}"
     create_table_sql = f"CREATE OR REPLACE TABLE {sf_workflows_temp}.{table_id} ("
     for key, value in data[0].items():
@@ -441,12 +453,6 @@ def _get_test_results(metadata, component):
     current_folder = os.path.dirname(os.path.abspath(__file__))
     components_folder = os.path.join(current_folder, "components")
 
-    project = os.getenv("BQ_TEST_PROJECT")
-    assert project, "BQ_TEST_PROJECT environment variable is not set"
-
-    dataset = os.getenv("BQ_TEST_DATASET")
-    assert dataset, "BQ_TEST_DATASET environment variable is not set"
-
     for component in components:
         component_folder = os.path.join(components_folder, component["name"])
         test_folder = os.path.join(component_folder, "test")
@@ -457,11 +463,7 @@ def _get_test_results(metadata, component):
         # run tests
         test_configuration_file = os.path.join(test_folder, "test.json")
         with open(test_configuration_file, "r") as f:
-            test_configurations = json.loads(
-                f.read()
-                .replace("${BQ_TEST_PROJECT}", project)
-                .replace("${BQ_TEST_DATASET}", dataset)
-            )
+            test_configurations = json.loads(substitute_dotenv(f.read(), ENV_VALUES))
 
         tables = {}
         component_results = {}
@@ -521,12 +523,6 @@ def test(component):
     deploy(None)
     results = _get_test_results(metadata, component)
 
-    project = os.getenv("BQ_TEST_PROJECT")
-    assert project, "BQ_TEST_PROJECT environment variable is not set"
-
-    dataset = os.getenv("BQ_TEST_DATASET")
-    assert dataset, "BQ_TEST_DATASET environment variable is not set"
-
     for component in metadata["components"]:
         component_folder = os.path.join(components_folder, component["name"])
         for test_id, outputs in results[component["name"]].items():
@@ -537,12 +533,7 @@ def test(component):
                 # if there is an issue when running on BigQuery
                 continue
             with open(test_filename, "r") as f:
-                # TODO: generalize for all variables?
-                expected = json.loads(
-                    f.read()
-                    .replace("${BQ_TEST_PROJECT}", project)
-                    .replace("${BQ_TEST_DATASET}", dataset)
-                )
+                expected = json.loads(substitute_dotenv(f.read(), ENV_VALUES))
                 for output_name, output in outputs.items():
                     output = json.loads(json.dumps(output, default=str))
                     if not test_output(expected[output_name], output, decimal_places=3):
