@@ -175,7 +175,7 @@ def create_sql_code_bq(metadata):
         DECLARE proceduresArray ARRAY<STRING>;
         DECLARE i INT64 DEFAULT 0;
 
-        CREATE OR REPLACE TABLE {WORKFLOWS_TEMP_PLACEHOLDER}.{EXTENSIONS_TABLENAME} (
+        CREATE IF NOT EXISTS TABLE {WORKFLOWS_TEMP_PLACEHOLDER}.{EXTENSIONS_TABLENAME} (
             name STRING,
             metadata STRING,
             procedures STRING
