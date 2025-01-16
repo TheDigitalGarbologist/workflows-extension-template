@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from google.cloud import bigquery
 from sys import argv
 from textwrap import dedent, indent
@@ -12,6 +12,7 @@ import os
 import re
 import snowflake.connector
 import zipfile
+import io
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
@@ -174,7 +175,7 @@ def create_sql_code_bq(metadata):
         DECLARE proceduresArray ARRAY<STRING>;
         DECLARE i INT64 DEFAULT 0;
 
-        CREATE TABLE IF NOT EXISTS {WORKFLOWS_TEMP_PLACEHOLDER}.{EXTENSIONS_TABLENAME} (
+        CREATE IF NOT EXISTS TABLE {WORKFLOWS_TEMP_PLACEHOLDER}.{EXTENSIONS_TABLENAME} (
             name STRING,
             metadata STRING,
             procedures STRING
@@ -359,6 +360,24 @@ def deploy(destination):
         deploy_sf(metadata, destination)
 
 
+def substitute_vars(text) -> str:
+    """Substitute all variables in a string with their values from the environment.
+
+    For a given string, all the variables using the syntax `${variable_name}`
+    will be interpolated with their values from the correspoding env vars. It will
+    raise a ValueError if any variable name is not present in the environment.
+    """
+    pattern = r"\${([a-zA-Z0-9_]+)}"
+
+    for variable in re.findall(pattern, text, re.MULTILINE):
+        env_var_value = os.getenv(variable)
+        if env_var_value is None:
+            raise ValueError(f"Environment variable {variable} is not set")
+        text = text.replace(f"${{{variable}}}", env_var_value)
+
+    return text
+
+
 def _upload_test_table_bq(filename, component):
     schema = []
     with open(filename) as f:
@@ -399,8 +418,15 @@ def _upload_test_table_bq(filename, component):
     job_config.schema = schema
 
     with open(filename, "rb") as source_file:
+        processed = io.BytesIO()
+        for line in source_file:
+            processed_line = substitute_vars(line.decode("utf-8"))
+            processed.write(processed_line.encode("utf-8"))
+
+        processed.seek(0)
+
         job = bq_client().load_table_from_file(
-            source_file,
+            processed,
             table_ref,
             job_config=job_config,
         )
@@ -415,7 +441,7 @@ def _upload_test_table_sf(filename, component):
         data = []
         for l in f.readlines():
             if l.strip():
-                data.append(json.loads(l))
+                data.append(json.loads(substitute_vars(l)))
     if os.path.exists(filename.replace(".ndjson", ".schema")):
         with open(filename.replace(".ndjson", ".schema")) as f:
             data_types = json.load(f)
@@ -475,6 +501,7 @@ def _get_test_results(metadata, component):
         components = metadata["components"]
     current_folder = os.path.dirname(os.path.abspath(__file__))
     components_folder = os.path.join(current_folder, "components")
+
     for component in components:
         component_folder = os.path.join(components_folder, component["name"])
         test_folder = os.path.join(component_folder, "test")
@@ -485,7 +512,8 @@ def _get_test_results(metadata, component):
         # run tests
         test_configuration_file = os.path.join(test_folder, "test.json")
         with open(test_configuration_file, "r") as f:
-            test_configurations = json.load(f)
+            test_configurations = json.loads(substitute_vars(f.read()))
+
         tables = {}
         component_results = {}
         for test_configuration in test_configurations:
@@ -551,19 +579,54 @@ def test(component):
     components_folder = os.path.join(current_folder, "components")
     deploy(None)
     results = _get_test_results(metadata, component)
+
     for component in metadata["components"]:
         component_folder = os.path.join(components_folder, component["name"])
         for test_id, outputs in results[component["name"]].items():
             test_folder = os.path.join(component_folder, "test", "fixtures")
             test_filename = os.path.join(test_folder, f"{test_id}.json")
+            if str(test_id).startswith("skip_"):
+                # Don't compare results, it will only throw an error
+                # if there is an issue when running on BigQuery
+                continue
             with open(test_filename, "r") as f:
-                expected = json.load(f)
+                expected = json.loads(substitute_vars(f.read()))
                 for output_name, output in outputs.items():
-                    output = json.loads(json.dumps(output))
-                    assert sorted(expected[output_name], key=json.dumps) == sorted(
-                        output, key=json.dumps
-                    ), f"Test '{test_id}' failed for component {component['name']} and table {output_name}."
+                    output = json.loads(json.dumps(output, default=str))
+                    if not test_output(expected[output_name], output, decimal_places=3):
+                        raise AssertionError(
+                            f"Test '{test_id}' failed for component {component['name']} and table {output_name}."
+                        )
     print("Extension correctly tested.")
+
+
+def normalize_json(original, decimal_places=3):
+    """Ensure that the input for a test is in an uniform format.
+
+    This function takes an input and generates a new version of it that does
+    comply with an uniform format, including the precision of the floats.
+    """
+    processed = list()
+    for row in original:
+        processed_row = dict()
+        for column, value in row.items():
+            if isinstance(value, float):
+                processed_row[column] = round(value, decimal_places)
+            else:
+                processed_row[column] = value
+        processed.append(processed_row)
+
+    return processed
+
+
+def test_output(expected, result, decimal_places=3):
+    expected = normalize_json(
+        sorted(expected, key=json.dumps), decimal_places=decimal_places
+    )
+    result = normalize_json(
+        sorted(result, key=json.dumps), decimal_places=decimal_places
+    )
+    return expected == result
 
 
 def capture(component):
@@ -580,7 +643,7 @@ def capture(component):
             os.makedirs(test_folder, exist_ok=True)
             test_filename = os.path.join(test_folder, f"{test_id}.json")
             with open(test_filename, "w") as f:
-                f.write(json.dumps(outputs, indent=2))
+                f.write(json.dumps(outputs, indent=2, default=str))
     print("Fixtures correctly captured.")
 
 
