@@ -18,7 +18,6 @@ EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
 WORKFLOWS_TEMP_PLACEHOLDER = "@@workflows_temp@@"
 
 load_dotenv()
-ENV_VALUES = dotenv_values(".env")
 
 bq_workflows_temp = f"`{os.getenv('BQ_TEST_PROJECT')}.{os.getenv('BQ_TEST_DATASET')}`"
 sf_workflows_temp = f"{os.getenv('SF_TEST_DATABASE')}.{os.getenv('SF_TEST_SCHEMA')}"
@@ -361,24 +360,20 @@ def deploy(destination):
         deploy_sf(metadata, destination)
 
 
-def substitute_dotenv(text: str,  env: dict[str, str]) -> str:
-    """Substitute all variables within a .env file in a string.
+def substitute_vars(text) -> str:
+    """Substitute all variables in a string with their values from the environment.
 
     For a given string, all the variables using the syntax `${variable_name}`
-    will be interpolated with their values in the provided .env file. It will
-    raise a ValueError if any variable name is not present as a key in the
-    file.
+    will be interpolated with their values from the correspoding env vars. It will
+    raise a ValueError if any variable name is not present in the environment.
     """
     pattern = r"\${([a-zA-Z0-9_]+)}"
 
     for variable in re.findall(pattern, text, re.MULTILINE):
-        if variable not in env:
-            raise ValueError(
-                f"Variable {variable} must be interpolated in the results but "
-                f"is not provided in .env"
-            )
-
-        text = text.replace(f"${{{variable}}}", env[variable])
+        env_var_value = os.getenv(variable)
+        if env_var_value is None:
+            raise ValueError(f"Environment variable {variable} is not set")
+        text = text.replace(f"${{{variable}}}", env_var_value)
 
     return text
 
@@ -397,8 +392,8 @@ def _upload_test_table_bq(filename, component):
     with open(filename, "rb") as source_file:
         processed = io.BytesIO()
         for line in source_file:
-            processed_line = substitute_dotenv(line.decode("utf-8"), ENV_VALUES)
-            processed.write(processed_line .encode("utf-8"))
+            processed_line = substitute_vars(line.decode("utf-8"))
+            processed.write(processed_line.encode("utf-8"))
 
         processed.seek(0)
 
@@ -415,7 +410,7 @@ def _upload_test_table_bq(filename, component):
 
 def _upload_test_table_sf(filename, component):
     with open(filename) as f:
-        data = [json.loads(substitute_dotenv(l, ENV_VALUES)) for l in f.readlines()]
+        data = [json.loads(substitute_vars(l)) for l in f.readlines()]
     table_id = f"_test_{component['name']}_{os.path.basename(filename).split('.')[0]}"
     create_table_sql = f"CREATE OR REPLACE TABLE {sf_workflows_temp}.{table_id} ("
     for key, value in data[0].items():
@@ -463,7 +458,7 @@ def _get_test_results(metadata, component):
         # run tests
         test_configuration_file = os.path.join(test_folder, "test.json")
         with open(test_configuration_file, "r") as f:
-            test_configurations = json.loads(substitute_dotenv(f.read(), ENV_VALUES))
+            test_configurations = json.loads(substitute_vars(f.read()))
 
         tables = {}
         component_results = {}
@@ -533,14 +528,15 @@ def test(component):
                 # if there is an issue when running on BigQuery
                 continue
             with open(test_filename, "r") as f:
-                expected = json.loads(substitute_dotenv(f.read(), ENV_VALUES))
+                expected = json.loads(substitute_vars(f.read()))
                 for output_name, output in outputs.items():
                     output = json.loads(json.dumps(output, default=str))
                     if not test_output(expected[output_name], output, decimal_places=3):
-                       raise AssertionError(
+                        raise AssertionError(
                             f"Test '{test_id}' failed for component {component['name']} and table {output_name}."
                         )
     print("Extension correctly tested.")
+
 
 def normalize_json(original, decimal_places=3):
     """Ensure that the input for a test is in an uniform format.
@@ -560,16 +556,16 @@ def normalize_json(original, decimal_places=3):
 
     return processed
 
+
 def test_output(expected, result, decimal_places=3):
     expected = normalize_json(
-        sorted(expected, key=json.dumps),
-        decimal_places=decimal_places
+        sorted(expected, key=json.dumps), decimal_places=decimal_places
     )
     result = normalize_json(
-        sorted(result, key=json.dumps),
-        decimal_places=decimal_places
+        sorted(result, key=json.dumps), decimal_places=decimal_places
     )
     return expected == result
+
 
 def capture(component):
     print("Capturing fixtures... ")
