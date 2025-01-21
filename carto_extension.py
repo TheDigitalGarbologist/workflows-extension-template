@@ -364,7 +364,7 @@ def substitute_vars(text) -> str:
     """Substitute all variables in a string with their values from the environment.
 
     For a given string, all the variables using the syntax `${variable_name}`
-    will be interpolated with their values from the correspoding env vars. It will
+    will be interpolated with their values from the corresponding env vars. It will
     raise a ValueError if any variable name is not present in the environment.
     """
     pattern = r"\${([a-zA-Z0-9_]+)}"
@@ -560,7 +560,6 @@ def _get_test_results(metadata, component):
                     rows = [{k: v for k, v in row.items()} for row in result]
                     component_results[test_id][output["name"]] = rows
             else:
-                print(query)
                 cur = sf_client().cursor()
                 cur.execute(query)
                 for output in component["outputs"]:
