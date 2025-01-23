@@ -333,6 +333,7 @@ def deploy_bq(metadata, destination):
     destination = f"`{destination}`" if destination else bq_workflows_temp
     sql_code = create_sql_code_bq(metadata)
     sql_code = sql_code.replace(WORKFLOWS_TEMP_PLACEHOLDER, destination)
+    sql_code = substitute_vars(sql_code)
     if verbose:
         print(sql_code)
     query_job = bq_client().query(sql_code)
@@ -345,6 +346,8 @@ def deploy_sf(metadata, destination):
     destination = destination or sf_workflows_temp
     sql_code = create_sql_code_sf(metadata)
     sql_code = sql_code.replace(WORKFLOWS_TEMP_PLACEHOLDER, destination)
+    sql_code = substitute_vars(sql_code)
+
     if verbose:
         print(sql_code)
     cur = sf_client().cursor()
