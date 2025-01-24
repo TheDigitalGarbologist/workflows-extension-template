@@ -13,6 +13,7 @@ import re
 import snowflake.connector
 import zipfile
 import io
+import urllib.request
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
@@ -670,15 +671,25 @@ def package():
     print(f"Extension correctly packaged to '{package_filename}' file.")
 
 
-import urllib.request
-
-
 def update():
-    script_url = "https://raw.githubusercontent.com/CartoDB/workflows-extension-template/master/carto_extension.py"
-    current_script_path = os.path.abspath(__file__)
-    temp_script_path = os.path.dirname(current_script_path) + ".tmp"
-    urllib.request.urlretrieve(script_url, temp_script_path)
-    os.replace(temp_script_path, current_script_path)
+    download_file("carto_extension.py", os.getcwd())
+    download_file("requirements.txt", os.getcwd())
+
+
+def download_file(
+    path_to_file: str, 
+    destination_dir: str,
+    remote_url: str = "https://raw.githubusercontent.com/CartoDB/workflows-extension-template",
+    remote_branch: str = "master"
+):
+    complete_url = f"{remote_url}/{remote_branch}/{path_to_file}"
+    complete_path = f"{destination_dir}/{path_to_file}"
+   
+    tmp_path = os.path.dirname(complete_path) + ".tmp"
+    urllib.request.urlretrieve(complete_url, tmp_path)
+    os.replace(tmp_path, complete_path)
+
+    print(f"Downloaded {complete_url} to {complete_path}")
 
 
 def _param_type_to_bq_type(param_type):
