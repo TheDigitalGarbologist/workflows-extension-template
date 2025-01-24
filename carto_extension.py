@@ -392,14 +392,14 @@ def _upload_test_table_bq(filename, component):
         for key, value in data[0].items():
             if isinstance(value, int):
                 data_type = "INT64"
-            elif isinstance(value, str):
-                try:
-                    wkt.loads(value)
-                    data_type = "GEOGRAPHY"
-                except Exception as e:
-                    data_type = "STRING"
             elif isinstance(value, float):
                 data_type = "FLOAT64"
+            elif key.endswith("date"):
+                data_type = "DATE"
+            elif key.endswith("timestamp"):
+                data_type = "TIMESTAMP"
+            elif key.endswith("datetime"):
+                data_type = "DATETIME"
             else:
                 try:
                     wkt.loads(value)
