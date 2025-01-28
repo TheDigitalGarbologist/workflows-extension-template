@@ -13,6 +13,7 @@ import re
 import snowflake.connector
 import zipfile
 import io
+import urllib.request
 
 WORKFLOWS_TEMP_SCHEMA = "WORKFLOWS_TEMP"
 EXTENSIONS_TABLENAME = "WORKFLOWS_EXTENSIONS"
@@ -394,14 +395,14 @@ def _upload_test_table_bq(filename, component):
         for key, value in data[0].items():
             if isinstance(value, int):
                 data_type = "INT64"
-            elif isinstance(value, str):
-                try:
-                    wkt.loads(value)
-                    data_type = "GEOGRAPHY"
-                except Exception as e:
-                    data_type = "STRING"
             elif isinstance(value, float):
                 data_type = "FLOAT64"
+            elif key.endswith("date"):
+                data_type = "DATE"
+            elif key.endswith("timestamp"):
+                data_type = "TIMESTAMP"
+            elif key.endswith("datetime"):
+                data_type = "DATETIME"
             else:
                 try:
                     wkt.loads(value)
@@ -547,9 +548,9 @@ def _get_test_results(metadata, component):
                 param_values.append(f"'{tablename}'")
                 tables[outputparam["name"]] = tablename
             param_values.append(False)  # dry run
-            param_values.append(json.dumps(test_configuration.get("env_vars", {})))
+            param_values.append(json.dumps(test_configuration.get("env_vars", "{}")))
             query = f"""CALL {workflows_temp}.{component['procedureName']}(
-                {','.join([str(p) if p is not None else 'null' for p in param_values])}, '{{ }}'
+                {','.join([str(p) if p is not None else 'null' for p in param_values])}
             );"""
             if verbose:
                 print(query)
@@ -673,15 +674,25 @@ def package():
     print(f"Extension correctly packaged to '{package_filename}' file.")
 
 
-import urllib.request
-
-
 def update():
-    script_url = "https://raw.githubusercontent.com/CartoDB/workflows-extension-template/master/carto_extension.py"
-    current_script_path = os.path.abspath(__file__)
-    temp_script_path = os.path.dirname(current_script_path) + ".tmp"
-    urllib.request.urlretrieve(script_url, temp_script_path)
-    os.replace(temp_script_path, current_script_path)
+    download_file("carto_extension.py", os.getcwd())
+    download_file("requirements.txt", os.getcwd())
+
+
+def download_file(
+    path_to_file: str, 
+    destination_dir: str,
+    remote_url: str = "https://raw.githubusercontent.com/CartoDB/workflows-extension-template",
+    remote_branch: str = "master"
+):
+    complete_url = f"{remote_url}/{remote_branch}/{path_to_file}"
+    complete_path = f"{destination_dir}/{path_to_file}"
+   
+    tmp_path = os.path.dirname(complete_path) + ".tmp"
+    urllib.request.urlretrieve(complete_url, tmp_path)
+    os.replace(tmp_path, complete_path)
+
+    print(f"Downloaded {complete_url} to {complete_path}")
 
 
 def _param_type_to_bq_type(param_type):
