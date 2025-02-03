@@ -680,14 +680,14 @@ def update():
 
 
 def download_file(
-    path_to_file: str, 
+    path_to_file: str,
     destination_dir: str,
     remote_url: str = "https://raw.githubusercontent.com/CartoDB/workflows-extension-template",
-    remote_branch: str = "master"
+    remote_branch: str = "master",
 ):
     complete_url = f"{remote_url}/{remote_branch}/{path_to_file}"
     complete_path = f"{destination_dir}/{path_to_file}"
-   
+
     tmp_path = os.path.dirname(complete_path) + ".tmp"
     urllib.request.urlretrieve(complete_url, tmp_path)
     os.replace(tmp_path, complete_path)
@@ -744,7 +744,7 @@ def _param_type_to_sf_type(param_type):
     elif param_type == "Number":
         return ["FLOAT", "INTEGER"]
     elif param_type == "Boolean":
-        return ["BOOL"]
+        return ["BOOLEAN"]
     else:
         raise ValueError(f"Parameter type '{param_type}' not supported")
 
