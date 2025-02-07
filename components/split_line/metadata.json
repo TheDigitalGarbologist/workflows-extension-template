@@ -1,9 +1,9 @@
 {
   "name": "split_line",
-  "title": "Split Line at Intersections",
+  "title": "Split Line @ Intersection",
   "description": "Splits road segments at intersections based on a user-defined unique identifier.",
-  "version": "1.0.1",
-  "icon": "component-default.svg",
+  "version": "1.1.0",
+  "icon": "extension-default.svg",
   "cartoEnvVars": [],
   "inputs": [
     {
@@ -13,17 +13,18 @@
       "type": "Table"
     },
     {
-      "name": "unique_id_field",
-      "title": "Unique ID Field",
-      "description": "Column in the input table that uniquely identifies each road segment",
-      "type": "String"
-    },
-    {
       "name": "tolerance",
       "title": "Tolerance",
       "description": "Tolerance value for deduplication of points",
       "type": "Number",
       "default": 1e-6
+    },
+    {
+      "name": "user_column",
+      "title": "Unique ID Column",
+      "description": "This column should represent a unique id for each polyline before the split",
+      "type": "String",
+      "default": "geoid"
     }
   ],
   "outputs": [

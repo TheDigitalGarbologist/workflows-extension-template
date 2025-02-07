@@ -1,17 +1,20 @@
 -- Step 1: Create the output table dynamically
 EXECUTE IMMEDIATE '''
-CREATE OR REPLACE TABLE ''' || output_table || ''' (
-  unique_id STRING,  
-  segmentid INT64,
-  segment_wkt STRING,
-  geom GEOGRAPHY,
-  segment_length_km FLOAT64
-)
-OPTIONS (expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 30 DAY));
-''';
+  CREATE OR REPLACE TABLE ''' || output_table || '''
+  OPTIONS (expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 30 DAY))
+  AS 
+  SELECT 
+      r.* EXCEPT (geom),  
+      CAST(NULL AS INT64) AS segmentid,            -- segmented line identifier
+      CAST(NULL AS STRING) AS segment_wkt,         -- segmented line as WKT
+      CAST(NULL AS GEOGRAPHY) AS geom,             -- new geometry (GEOGRAPHY type)
+      CAST(NULL AS FLOAT64) AS segment_length_km   -- length in km
+  FROM ''' || input_table || ''' r
+  WHERE 1 = 0;
+  ''';
+
 
 -- Step 2: Define the JavaScript UDF for splitting road segments at intersections
-EXECUTE IMMEDIATE '''
 CREATE TEMP FUNCTION splitLineAtPoints(
   line_wkt STRING, pts_wkt ARRAY<STRING>, tolerance FLOAT64
 ) RETURNS ARRAY<STRUCT<segmentid INT64, segment_wkt STRING>> 
@@ -124,40 +127,37 @@ function splitLineAtPoints(line_wkt, pts_wkt, tolerance) {
 
 return splitLineAtPoints(line_wkt, pts_wkt, tolerance);
 """;
-''';
 
 -- Step 3: Insert split road segments into output_table
 EXECUTE IMMEDIATE '''
 INSERT INTO ''' || output_table || '''
-(unique_id, segmentid, segment_wkt, geom, segment_length_km)
-SELECT
-  r.''' || unique_id_field || ''' AS unique_id,  -- ✅ User-selected unique identifier column
-  seg.segmentid,
-  seg.segment_wkt,
-  ST_GEOGFROMTEXT(seg.segment_wkt) AS geom,
-  ST_LENGTH(ST_GEOGFROMTEXT(seg.segment_wkt)) / 1000 AS segment_length_km
-FROM ''' || input_table || ''' r
-LEFT JOIN (
-  SELECT ''' || unique_id_field || ''' AS rid, inter_pts 
-  FROM (
+SELECT * FROM (
+  WITH intersections AS (
     SELECT
-      r.''' || unique_id_field || ''' AS rid,
-      ARRAY_AGG(ST_ASTEXT(ST_INTERSECTION(r.geom, other.geom))
-                IGNORE NULLS) AS inter_pts
+      r.''' || user_column || ''' AS rid,  -- Dynamically use user-defined column
+      ARRAY_AGG(ST_ASTEXT(ST_INTERSECTION(r.geom, other.geom)) IGNORE NULLS) AS inter_pts
     FROM ''' || input_table || ''' r
     JOIN ''' || input_table || ''' other
-      ON r.''' || unique_id_field || ''' <> other.''' || unique_id_field || '''
+      ON r.''' || user_column || ''' <> other.''' || user_column || '''
          AND ST_INTERSECTS(r.geom, other.geom)
-    GROUP BY r.''' || unique_id_field || '''
+    GROUP BY r.''' || user_column || '''
   )
-) i
-ON r.''' || unique_id_field || ''' = i.rid
-CROSS JOIN UNNEST(
-  splitLineAtPoints(
-    ST_ASTEXT(r.geom),
-    IFNULL(i.inter_pts, []),
-    ''' || tolerance || '''
-  )
-) AS seg
-WHERE ST_LENGTH(ST_GEOGFROMTEXT(seg.segment_wkt)) > 0;
+  SELECT
+    r.* EXCEPT (geom),
+    seg.segmentid,
+    seg.segment_wkt,
+    ST_GEOGFROMTEXT(seg.segment_wkt) AS geom,
+    ST_LENGTH(ST_GEOGFROMTEXT(seg.segment_wkt)) / 1000 AS segment_length_km
+  FROM ''' || input_table || ''' r
+  LEFT JOIN intersections i
+    ON r.''' || user_column || ''' = i.rid
+  CROSS JOIN UNNEST(
+    splitLineAtPoints(
+      ST_ASTEXT(r.geom),
+      IFNULL(i.inter_pts, []),
+      ''' || tolerance || '''  -- Inject tolerance from metadata.json
+    )
+  ) AS seg
+  WHERE ST_LENGTH(ST_GEOGFROMTEXT(seg.segment_wkt)) > 0
+);
 ''';
