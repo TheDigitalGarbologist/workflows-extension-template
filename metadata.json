@@ -31,7 +31,6 @@
       }
     ],
     "components": [
-      "template",
       "split_line"
     ]
   }

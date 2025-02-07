@@ -1,4 +1,4 @@
--- Step 1: Create the output table with dynamic reference
+-- Step 1: Create the output table dynamically
 EXECUTE IMMEDIATE '''
 CREATE OR REPLACE TABLE ''' || output_table || ''' (
   unique_id STRING,  
@@ -10,15 +10,16 @@ CREATE OR REPLACE TABLE ''' || output_table || ''' (
 OPTIONS (expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 30 DAY));
 ''';
 
--- Step 2: Define the JavaScript UDF
+-- Step 2: Define the JavaScript UDF for splitting road segments at intersections
+EXECUTE IMMEDIATE '''
 CREATE TEMP FUNCTION splitLineAtPoints(
   line_wkt STRING, pts_wkt ARRAY<STRING>, tolerance FLOAT64
 ) RETURNS ARRAY<STRUCT<segmentid INT64, segment_wkt STRING>> 
 LANGUAGE js AS """
 function parsePoint(wkt) {
   try {
-    var inner = wkt.replace(/^POINT\(/, '').replace(/\)$/, '');
-    var parts = inner.split(' ');
+    var inner = wkt.replace(/^POINT\\(/, "").replace(/\\)$/, "");
+    var parts = inner.split(" ");
     return { x: parseFloat(parts[0]), y: parseFloat(parts[1]) };
   } catch (err) {
     return null;
@@ -26,10 +27,10 @@ function parsePoint(wkt) {
 }
 
 function parseLine(wkt) {
-  var inner = wkt.replace(/^LINESTRING\(/, '').replace(/\)$/, '');
-  var parts = inner.split(',');
+  var inner = wkt.replace(/^LINESTRING\\(/, "").replace(/\\)$/, "");
+  var parts = inner.split(",");
   return parts.map(function(part) {
-    var coords = part.trim().split(' ');
+    var coords = part.trim().split(" ");
     return { x: parseFloat(coords[0]), y: parseFloat(coords[1]) };
   });
 }
@@ -123,13 +124,14 @@ function splitLineAtPoints(line_wkt, pts_wkt, tolerance) {
 
 return splitLineAtPoints(line_wkt, pts_wkt, tolerance);
 """;
+''';
 
 -- Step 3: Insert split road segments into output_table
 EXECUTE IMMEDIATE '''
 INSERT INTO ''' || output_table || '''
 (unique_id, segmentid, segment_wkt, geom, segment_length_km)
 SELECT
-  CAST(''' || unique_id_field || ''' AS STRING) AS unique_id,  -- ✅ User-defined unique identifier
+  r.''' || unique_id_field || ''' AS unique_id,  -- ✅ User-selected unique identifier column
   seg.segmentid,
   seg.segment_wkt,
   ST_GEOGFROMTEXT(seg.segment_wkt) AS geom,
