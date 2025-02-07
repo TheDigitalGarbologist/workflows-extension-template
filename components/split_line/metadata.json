@@ -1,0 +1,37 @@
+{
+  "name": "split_line",
+  "title": "Split Line at Intersections",
+  "description": "Splits road segments at intersections based on a user-defined unique identifier.",
+  "version": "1.0.1",
+  "icon": "component-default.svg",
+  "cartoEnvVars": [],
+  "inputs": [
+    {
+      "name": "input_table",
+      "title": "Input Table",
+      "description": "Table containing road geometries",
+      "type": "Table"
+    },
+    {
+      "name": "unique_id_field",
+      "title": "Unique ID Field",
+      "description": "Column in the input table that uniquely identifies each road segment",
+      "type": "String"
+    },
+    {
+      "name": "tolerance",
+      "title": "Tolerance",
+      "description": "Tolerance value for deduplication of points",
+      "type": "Number",
+      "default": 1e-6
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output_table",
+      "title": "Output Table",
+      "description": "Table containing the split road segments",
+      "type": "Table"
+    }
+  ]
+}
